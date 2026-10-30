@@ -124,6 +124,54 @@ body.dro #drawer{transform:none}body.dro #scrim{opacity:1;pointer-events:auto}
   body>.bar,body>.ctx,body>main{margin-inline-start:280px}.bar #mn{display:none}
   .sheet{inset-inline-start:280px}.sheet .bar,.sheet main{margin-inline-start:0}
 }
+
+/* ============ كروت الملخص الجديدة ============ */
+.plus-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.mini-t{width:100%;border-collapse:collapse;font-size:13px;text-align:center}
+.mini-t th,.mini-t td{padding:7px 6px;border-bottom:1px solid var(--ln);white-space:nowrap}
+.mini-t th{color:var(--mu);font-size:12px;font-weight:700}
+.mini-t td:first-child,.mini-t th:first-child{text-align:start}
+.mini-t tr.click:hover td{background:var(--s2)}
+.tbl-sc{overflow:auto;border-radius:14px}
+.stk{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--s3);direction:ltr}
+.stk i{display:block;height:100%}
+.pz0{background:#6366f1}.pz1{background:#10b981}.pz2{background:#f59e0b}.pz3{background:#ef4444}
+.lg{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mu);margin-top:8px}
+.lg b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:4px}
+.star{border:none;background:none;font-size:18px;line-height:1;color:var(--mu);padding:0 4px;cursor:pointer}
+.star.on{color:#F2A20C}
+.fxd{display:inline-flex;flex-direction:column;align-items:center;min-width:54px;padding:5px 7px;border-radius:10px;font-size:12px;font-weight:700;margin:2px;color:#14122B}
+.fxd small{font-size:10px;font-weight:600;opacity:.8}
+.fxd.d1{background:#34d399}.fxd.d2{background:#a7f3d0}.fxd.d3{background:#e5e7eb}.fxd.d4{background:#fbbf24}.fxd.d5{background:#f87171}
+.wi{display:inline-flex;align-items:center;gap:8px}
+.wi button{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--ln);background:var(--s1);color:var(--tx);font-size:16px;padding:0}
+.wi b{min-width:30px;text-align:center}
+.wi b.ch{color:var(--ac)}
+.sr-h{font-size:12.5px;font-weight:800;color:var(--mu);margin:10px 2px 2px}
+.kiosk .filters,.kiosk .active-bar,.kiosk .tabs-wrap,.kiosk .fab,.kiosk .board-actions{display:none!important}
+.kiosk body,body.kiosk{font-size:17px}
+
+
+.li{display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:1px solid var(--ln)}.li:first-of-type{border-top:0}
+.li .grow{flex:1;min-width:0}.li b{font-weight:600}.li small{display:block;color:var(--mu);font-size:12px}.li .v{font-weight:600;font-variant-numeric:tabular-nums}
+.ct{font-size:14px;font-weight:600;margin:0 40px 10px 0}.sub-h{font-size:12.5px;font-weight:500;color:var(--mu);margin:10px 2px 2px}
+.tile{background:var(--s2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}.tile span{font-size:12px;color:var(--mu)}.tile b{font-size:20px;font-weight:600}.tile small em{font-style:normal}
+.cd.plus .cam{inset-inline-end:8px}
+.chip.w2{background:color-mix(in srgb,var(--ng) 18%,transparent)}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:500;background:var(--s3);color:var(--mu)}.tag.ac,.tag.chip-mg{background:color-mix(in srgb,var(--ac) 20%,transparent);color:var(--act)}.tag.chip-wc{background:color-mix(in srgb,var(--ng) 18%,transparent);color:var(--ng)}
+select.sr{appearance:none;color:var(--tx)}
+.tw{overflow:auto;border:1px solid var(--ln);border-radius:var(--r);background:var(--s1);max-height:70vh}
+table.gt{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:13px}
+.gt th{position:sticky;top:0;z-index:2;background:var(--s2);color:var(--mu);font-weight:500;padding:10px 12px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--ln);cursor:pointer;user-select:none}
+.gt td{padding:9px 12px;border-bottom:1px solid var(--ln);text-align:center;white-space:nowrap;vertical-align:middle}.gt td.wr{white-space:normal;min-width:180px;max-width:320px;text-align:start}
+.gt th:first-child,.gt td:first-child{position:sticky;inset-inline-start:0;z-index:1;background:var(--s1);text-align:start;box-shadow:-1px 0 0 var(--ln)}.gt th:first-child{z-index:3;background:var(--s2)}
+.gt tr.tot td{background:var(--s2);font-weight:600}.gt tbody tr:hover td{background:var(--s2)}
+.gt .arr{color:var(--act);font-size:10px;margin-inline-start:3px}
+.names{display:flex;flex-wrap:wrap;gap:4px}.nm2{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 8px;border-radius:99px;background:var(--s3);font-size:12px}
+.kiosk .bar,.kiosk .ctx{display:none}.kiosk main{font-size:17px}
+.tbar{display:flex;gap:8px;align-items:center;margin:10px 0}.tbar .sg{flex:1}
+.pk{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:46px;padding:0 14px;border:1px solid var(--ln);border-radius:12px;background:var(--s1);width:100%;font-weight:500}
+.opt{display:flex;align-items:center;gap:10px;min-height:46px;border-bottom:1px solid var(--ln);cursor:pointer}.opt .cb{width:20px;height:20px;border-radius:6px;border:2px solid var(--ln);display:grid;place-items:center;flex:none}.opt.on .cb{background:var(--ac);border-color:var(--ac);color:#0B0F19}.opt small{color:var(--mu);margin-inline-start:auto;font-size:12px}
 </style>
 </head>
 <body>
@@ -134,6 +182,7 @@ body.dro #drawer{transform:none}body.dro #scrim{opacity:1;pointer-events:auto}
 <div id="sheet" class="sheet"></div><div id="modal"><div class="md" id="md"></div></div><div id="toasts" aria-live="polite"></div>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 (function(){"use strict";
 var CFG=window.CFG||{API:"",TABS:[]};
@@ -148,15 +197,17 @@ var NAMES={overview:"الملخص",transfers:"التحويلات",teams:"الت�
 var SK="fc_app_v1";
 var S={tab:"overview",theme:"dark",acc:"lime",gw:null,cur:null,D:null,busy:false,F:{groups:[],contests:[],q:"",play:"all",autoSubs:true,viceCap:true,capTeam:true,trChip:false,photos:true},sort:{members:"net",teams:"net",players:"own",transfers:"gain"},dir:"all",stack:[],live:true};
 try{var _s=JSON.parse(localStorage.getItem(SK)||"null");if(_s){["tab","theme","acc","gw"].forEach(function(k){if(_s[k]!=null)S[k]=_s[k]});if(_s.F)Object.assign(S.F,_s.F);if(_s.sort)Object.assign(S.sort,_s.sort)}}catch(e){}
+try{var _h=location.hash.match(/#s=([A-Za-z0-9_-]+)/);if(_h){var _j=JSON.parse(decodeURIComponent(escape(atob(_h[1].replace(/-/g,"+").replace(/_/g,"/")))));if(_j.gw)S.gw=_j.gw;if(_j.tab)S.tab=_j.tab;if(_j.F)Object.assign(S.F,_j.F)}}catch(e){}
 if(!_s||!_s.theme)S.theme=(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";
 function save(){try{localStorage.setItem(SK,JSON.stringify({tab:S.tab,theme:S.theme,acc:S.acc,gw:S.gw,F:S.F,sort:S.sort}))}catch(e){}}
 function toast(t){var d=document.createElement("div");d.className="toast";d.textContent=t;$("#toasts").appendChild(d);setTimeout(function(){d.remove()},3200)}
 function look(){var h=document.documentElement;h.setAttribute("data-theme",S.theme);var a=ACC[S.acc]||ACC.lime;h.style.setProperty("--ac",a[0]);h.style.setProperty("--act",S.theme==="dark"?a[0]:a[1]);var m=$('meta[name="theme-color"]');if(m)m.setAttribute("content",S.theme==="dark"?"#0B0F19":"#F3F5FA")}
 
 /* ===== البيانات ===== */
+var R={hooks:{afterLoad:[],afterLive:[],beforeLive:[]},views:{},tabs:[],main:[],filters:[]};S.WI={};
 var FXT={},STC={},EMB=null;
 function P(id){return(S.D&&S.D.players[id])||{n:"#"+id,pos:"",club:"",t:0,price:0,sel:0,st:"a",ch:"",code:""}}
-function pPts(id){if(!S.D||!S.D.live)return null;var e=S.D.live.el[id];return e?e[1]:0}
+function pPts(id){if(!S.D||!S.D.live)return null;var w=S.WI[id];if(w!=null)return w;var e=S.D.live.el[id];return e?e[1]:0}
 function pStat(id){
   if(!S.D||!S.D.live)return"na";if(STC[id])return STC[id];
   var e=S.D.live.el[id],min=e?e[0]:0,fx=FXT[P(id).t]||[],s;
@@ -197,6 +248,7 @@ function WM(){
     if(F.groups.length&&F.groups.indexOf(m.group)<0)return false;
     if(F.contests.length&&F.contests.indexOf(m.contest)<0)return false;
     if(q&&(m.person+" "+m.team).toLowerCase().indexOf(q)<0&&!m.picks.some(function(p){return P(p[0]).n.toLowerCase().indexOf(q)>-1}))return false;
+    for(var i=0;i<R.filters.length;i++)if(!R.filters[i](m))return false;
     return true})}
 function ownership(wm){
   var st={},g=function(id){return st[id]||(st[id]={id:id,own:0,xi:0,bn:0,cap:0,buy:0,sell:0})};
@@ -251,7 +303,7 @@ function vOverview(){
     var best=function(f,low){var b=null,bv=null;wm.forEach(function(m){var v=f(m);if(v==null)return;if(bv==null||(low?v<bv:v>bv)){bv=v;b=m}});return b?{m:b,v:bv}:null};
     var aw=[["الريادي",best(function(m){return m.d.net}),function(v){return v}],["الكابتن الذهبي",best(function(m){return m.d.eff?num(m.d.eff.pts):null}),function(v){return v}],["الكابتن الأنحس",best(function(m){return m.d.eff?num(m.d.eff.pts):null},true),function(v){return v}],["الدكة السودا",best(function(m){return m.d.benchPts>0?m.d.benchPts:null}),function(v){return v}],["الهيت الغالي",best(function(m){return m.cost>0?m.cost:null}),function(v){return"-"+v}]].filter(function(x){return x[1]});
     h+='<div class="sec">جوايز الجولة</div><div class="aw">'+aw.map(function(x){return'<div class="cd act"'+act("m",x[1].m.uid)+'><div class="k">'+x[0]+'</div><b class="n" style="font-size:22px">'+x[2](x[1].v)+'</b><small class="mut" style="display:block">'+esc(x[1].m.person)+" - "+esc(x[1].m.team)+"</small></div>"}).join("")+"</div>"}
-  return h}
+  return h+(R.overviewExtra?R.overviewExtra():"")}
 
 function sortBar(key,opts){return'<div class="sec" style="margin-top:12px"><span>ترتيب حسب</span></div><div class="chips">'+opts.map(function(o){return'<button data-sort="'+key+":"+o[0]+'" class="'+(S.sort[key]===o[0]?"on":"")+'">'+o[1]+"</button>"}).join("")+"</div>"}
 function vMembers(){
@@ -271,12 +323,13 @@ function vTeams(){
 function vPlayers(){
   var wm=WM(),st=ownership(wm),k=S.sort.players;
   var key={own:function(s){return s.own},xi:function(s){return s.xi},cap:function(s){return s.cap},pts:function(s){return num(pPts(s.id))},buy:function(s){return s.buy},sell:function(s){return s.sell}}[k]||function(s){return s.own};
-  var L=Object.keys(st).map(function(i){return st[i]}).sort(function(a,b){return key(b)-key(a)||b.own-a.own}).slice(0,80);
+  var L=Object.keys(st).map(function(i){return st[i]}).filter(function(s){return R.plRow?R.plRow(s):true}).sort(function(a,b){return key(b)-key(a)||b.own-a.own}).slice(0,80);
   return sortBar("players",[["own","الامتلاك"],["xi","أساسي"],["cap","كابتن"],["pts","النقاط"],["buy","الشراء"],["sell","البيع"]])+
    L.map(function(s){var p=P(s.id);return'<div class="cd act"'+act("p",s.id)+'><div style="display:flex;align-items:center;gap:12px">'+av(s.id,40)+'<div style="flex:1;min-width:0"><b>'+esc(p.n)+'</b><span class="sd sd-'+pStat(s.id)+'"></span><small class="mut" style="display:block;font-size:12px">'+esc(p.club)+" - "+esc(p.pos)+" - "+p.price.toFixed(1)+'م</small></div><div class="pt n">'+(S.D.live?num(pPts(s.id)):"")+'<small class="mut">'+s.own+" عضو ("+s.pct+'%)</small></div></div><div class="ms"><span>أساسي <b class="n">'+s.xi+'</b></span><span>كابتن <b class="n">'+s.cap+'</b></span><span class="up">+<span class="n">'+s.buy+'</span></span><span class="dn">-<span class="n">'+s.sell+"</span></span></div></div>"}).join("")}
 function vTransfers(){
   var wm=WM(),rows=[];
   wm.forEach(function(m){m.transfers.forEach(function(x){rows.push({m:m,i:x[0],o:x[1],t:Date.parse(x[2])||0,g:S.D.live?num(pPts(x[0]))-num(pPts(x[1])):0})})});
+  if(R.trRow)rows=rows.filter(R.trRow);if(R.trPost)rows=R.trPost(rows);
   rows.sort(function(a,b){return S.sort.transfers==="time"?b.t-a.t:b.g-a.g});
   var ft=function(t){return t?new Date(t).toLocaleString("ar-EG",{weekday:"short",hour:"numeric",minute:"2-digit"}):""};
   return sortBar("transfers",[["gain","الأحسن مكسب"],["time","الأحدث"]])+'<div class="sec"><span>'+rows.length+" تحويلة</span></div>"+
@@ -315,12 +368,12 @@ function drillHtml(id,k){
   return'<div class="k">'+title+' <b class="n">('+rows.length+")</b></div>"+Object.keys(by).sort(function(a,b){return by[b].length-by[a].length}).map(function(t){return'<div class="sec" style="margin:10px 0 2px">'+esc(t)+" ("+by[t].length+")</div>"+by[t].map(function(r){return'<div class="row act"'+act("m",r.m.uid)+'><div class="grow"><b>'+esc(r.m.person)+"</b><small>"+esc(r.info)+"</small></div></div>"}).join("")}).join("")}
 function openPlayer(id){
   var wm=WM(),s=ownership(wm)[id]||{own:0,pct:0,xi:0,cap:0,buy:0,sell:0},p=P(id),tiles=[["own",s.own+" ("+s.pct+"%)"],["xi",s.xi],["cap",s.cap],["buy",s.buy],["sell",s.sell]];
-  push(p.n,'<div class="cd"><div style="display:flex;align-items:center;gap:12px">'+av(id,56)+'<div style="flex:1"><b style="font-size:18px">'+esc(p.n)+'</b><div class="mut">'+esc(p.club)+" - "+esc(p.pos)+" - "+p.price.toFixed(1)+"م"+(p.news?" - "+esc(p.news):"")+'</div></div><b class="n" style="font-size:30px">'+(S.D.live?num(pPts(id)):"")+'</b></div></div><div class="hs dr" style="grid-template-columns:repeat(5,1fr)" id="drl">'+tiles.map(function(t,i){return'<div data-dk="'+t[0]+'"><b class="n">'+t[1]+"</b><small>"+DRILL[i][1]+"</small></div>"}).join("")+'</div><div class="cd" id="drp" hidden></div>','player:'+id)}
+  push(p.n,'<div class="cd"><div style="display:flex;align-items:center;gap:12px">'+av(id,56)+'<div style="flex:1"><b style="font-size:18px">'+esc(p.n)+'</b><div class="mut">'+esc(p.club)+" - "+esc(p.pos)+" - "+p.price.toFixed(1)+"م"+(p.news?" - "+esc(p.news):"")+'</div></div><b class="n" style="font-size:30px">'+(S.D.live?num(pPts(id)):"")+'</b></div></div><div class="hs dr" style="grid-template-columns:repeat(5,1fr)" id="drl">'+tiles.map(function(t,i){return'<div data-dk="'+t[0]+'"><b class="n">'+t[1]+"</b><small>"+DRILL[i][1]+"</small></div>"}).join("")+'</div><div class="cd" id="drp" hidden></div>','player:'+id);if(R.afterPlayer)R.afterPlayer(id)}
 function openFilters(){
   var G=[],C=[];S.D.members.forEach(function(m){if(m.group&&G.indexOf(m.group)<0)G.push(m.group);if(m.contest&&C.indexOf(m.contest)<0)C.push(m.contest)});
   var chips=function(L,sel,k){return L.length?'<div class="chips" style="flex-wrap:wrap" data-k="'+k+'">'+L.map(function(x){return'<button data-v="'+esc(x)+'" class="'+(sel.indexOf(x)>-1?"on":"")+'">'+esc(x)+"</button>"}).join("")+"</div>":'<div class="mut">مفيش</div>'};
   var tg=function(t,k){return'<div class="tg"><span>'+t+'</span><button class="sw '+(S.F[k]?"on":"")+'" data-tg="'+k+'" aria-label="'+t+'"></button></div>'};
-  push("الفلاتر",'<div class="sec">بحث</div><label class="sr">'+ic("search",18)+'<input id="fq" placeholder="اسم عضو أو تيم أو لاعب" value="'+esc(S.F.q)+'"></label><div class="sec">المجموعة</div>'+chips(G,S.F.groups,"groups")+'<div class="sec">المسابقة</div>'+chips(C,S.F.contests,"contests")+'<div class="sec">الحساب</div>'+tg("التبديل التلقائي","autoSubs")+tg("الفايس بدل الكابتن الغايب","viceCap")+tg("كابتن التيم حسب المسابقة","capTeam")+tg("ضم أصحاب الوايلد/الفري هيت في مكسب التحويلة","trChip")+tg("صور اللاعيبة","photos")+'<div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:18px"><button class="btn b2" id="fclr">مسح</button><button class="btn b1" id="fok">تطبيق</button></div>',"filters")}
+  push("الفلاتر",'<div class="sec">بحث</div><label class="sr">'+ic("search",18)+'<input id="fq" placeholder="اسم عضو أو تيم أو لاعب" value="'+esc(S.F.q)+'"></label><div class="sec">المجموعة</div>'+chips(G,S.F.groups,"groups")+'<div class="sec">المسابقة</div>'+chips(C,S.F.contests,"contests")+'<div class="sec">الحساب</div>'+tg("التبديل التلقائي","autoSubs")+tg("الفايس بدل الكابتن الغايب","viceCap")+tg("كابتن التيم حسب المسابقة","capTeam")+tg("ضم أصحاب الوايلد/الفري هيت في مكسب التحويلة","trChip")+tg("صور اللاعيبة","photos")+'<button class="btn b2" id="fadv" style="width:100%;margin-top:14px">فلاتر متقدمة (لاعيبة، أندية، مراكز، استبعاد، خواص...)</button><div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:10px"><button class="btn b2" id="fclr">مسح</button><button class="btn b1" id="fok">تطبيق</button></div>',"filters")}
 function openSearch(){
   push("بحث سريع",'<label class="sr">'+ic("search",18)+'<input id="gq" placeholder="اكتب اسم عضو أو تيم أو لاعب..." autocomplete="off"></label><div id="gr"></div>',"search");
   var inp=$("#gq");inp.focus();inp.oninput=function(){
@@ -348,6 +401,7 @@ function bindFilters(){
   $$(".chips[data-k]",sh).forEach(function(c){c.onclick=function(e){var b=e.target.closest("button[data-v]");if(!b)return;var k=c.getAttribute("data-k"),v=b.getAttribute("data-v"),a=S.F[k],i=a.indexOf(v);if(i>-1)a.splice(i,1);else a.push(v);b.classList.toggle("on")}});
   $$("[data-tg]",sh).forEach(function(b){b.onclick=function(){var k=b.getAttribute("data-tg");S.F[k]=!S.F[k];b.classList.toggle("on")}});
   $("#fq").oninput=function(e){S.F.q=e.target.value};
+  $("#fadv").onclick=function(){save();if(R.openAdv)R.openAdv()};
   $("#fclr").onclick=function(){S.F.groups=[];S.F.contests=[];S.F.q="";$("#fq").value="";$$(".chips button.on",sh).forEach(function(x){x.classList.remove("on")})};
   $("#fok").onclick=function(){save();S.stack=[];paintSheet();if(S.D){derive();render()}}}
 
@@ -374,25 +428,28 @@ function capture(el,title){
 
 /* ===== الهيدر والقائمة والرسم ===== */
 function drawer(){
-  var tabs=CFG.TABS||[],onS=S.tab in NAMES;
+  var tabs=CFG.TABS||[],onS=(S.tab in NAMES)||R.tabs.some(function(t){return t.id===S.tab});
   $("#drawer").innerHTML='<div class="dh"><span class="mk">'+ic("stats")+'</span><span style="flex:1">مركز الفانتازي</span><button class="ib f" data-close aria-label="قفل">'+ic("close")+'</button></div><div class="ns"><div class="gp">التبويبات</div>'+
    '<button class="tb '+(onS?"on":"")+'" data-tab="overview"><i>'+ic("stats")+'</i><span>شويه احصائيات<small>مسابقتي</small></span>'+ic("cd",18)+"</button>"+
-   '<div class="sub">'+SUBS.map(function(s){var cnt=S.D?{transfers:S.D.members.reduce(function(a,m){return a+m.transfers.length},0),teams:new Set(S.D.members.map(function(m){return m.team})).size,members:S.D.members.length,players:Object.keys(S.D.players).length}[s[0]]:"";return'<button data-tab="'+s[0]+'" class="'+(S.tab===s[0]?"on":"")+'">'+s[1]+(cnt?'<em class="n">'+cnt+"</em>":"")+"</button>"}).join("")+"</div>"+
+   '<div class="sub">'+SUBS.concat(R.tabs.map(function(t){return[t.id,t.name]})).map(function(s){var cnt=S.D?{transfers:S.D.members.reduce(function(a,m){return a+m.transfers.length},0),teams:new Set(S.D.members.map(function(m){return m.team})).size,members:S.D.members.length,players:Object.keys(S.D.players).length}[s[0]]:"";return'<button data-tab="'+s[0]+'" class="'+(S.tab===s[0]?"on":"")+'">'+s[1]+(cnt?'<em class="n">'+cnt+"</em>":"")+"</button>"}).join("")+"</div>"+
+   R.main.map(function(t){return'<button class="tb '+(S.tab===t.id?"on":"")+'" data-tab="'+t.id+'"><i>'+ic(t.icon||"swap")+"</i><span>"+esc(t.name)+"<small>"+esc(t.sub||"")+"</small></span>"+ic("cl",18)+"</button>"}).join("")+
    tabs.map(function(t){return'<button class="tb '+(S.tab==="x:"+t.id?"on":"")+'" data-tab="x:'+esc(t.id)+'"><i>'+ic("swap")+"</i><span>"+esc(t.name)+"<small>"+esc(t.sub||"")+"</small></span>"+ic("cl",18)+"</button>"}).join("")+
-   '<div class="gp">أدوات</div><button class="tl" id="syn">'+ic("sync")+' تحديث الأعضاء من الليغات</button><button class="tl" id="lnk">'+ic("link")+" نسخ رابط التطبيق</button></div>"+
+   '<div class="gp">أدوات</div><button class="tl" id="syn">'+ic("sync")+' تحديث الأعضاء من الليغات</button><button class="tl" id="lnk">'+ic("link")+" نسخ رابط بالفلاتر دي</button>"+'<button class="tl" id="aut">'+ic("sync")+" تحديث لايف تلقائي (كل 5 دقايق)</button></div>"+
    '<div class="ft"><div class="dots">'+Object.keys(ACC).map(function(k){return'<button data-acc="'+k+'" class="'+(S.acc===k?"on":"")+'" style="background:'+ACC[k][0]+'" aria-label="'+k+'"></button>'}).join("")+'</div><button class="ib f" id="th" aria-label="الوضع">'+ic(S.theme==="dark"?"sun":"moon")+"</button></div>"}
 function ctx(){
   var D=S.D,lv=D&&D.live?'<span class="lv"><i></i>لايف <span class="n">'+new Date(D.live.updatedAt).toLocaleTimeString("ar-EG",{hour:"numeric",minute:"2-digit"})+"</span></span>":'<span class="lv off"><i></i>'+(D?"مفيش لايف - دوس تحديث":"بيحمّل...")+"</span>";
-  $("#ctx").innerHTML='<div class="gw"><button class="ib sm" data-gws="-1" aria-label="السابقة">'+ic("cr",16)+'</button><button class="t" data-gwp>الجولة <span class="n">'+(S.gw||"–")+'</span></button><button class="ib sm" data-gws="1" aria-label="التالية">'+ic("cl",16)+"</button></div>"+lv+'<button class="ib sm" id="rf" aria-label="تحديث اللايف" style="margin-inline-start:auto">'+ic("sync",18)+"</button>"}
+  $("#ctx").innerHTML='<div class="gw"><button class="ib sm" data-gws="-1" aria-label="السابقة">'+ic("cr",16)+'</button><button class="t" data-gwp>الجولة <span class="n">'+(S.gw||"–")+'</span></button><button class="ib sm" data-gws="1" aria-label="التالية">'+ic("cl",16)+"</button></div>"+lv+(D&&D.nextDeadline?'<span class="lv off" id="ddl"></span>':"")+'<button class="ib sm" id="rf" aria-label="تحديث اللايف" style="margin-inline-start:auto">'+ic("sync",18)+"</button>"}
 function render(){
   var emb=S.tab.indexOf("x:")===0?(CFG.TABS||[]).find(function(t){return"x:"+t.id===S.tab}):null;
-  $("#ttl").textContent=emb?emb.name:NAMES[S.tab]||"الملخص";
+  $("#ttl").textContent=emb?emb.name:(R.title&&R.title(S.tab))||NAMES[S.tab]||"الملخص";
   document.body.classList.remove("dro");drawer();ctx();
-  var v=$("#view");$("#ctx").hidden=!!emb;
+  var v=$("#view");$("#ctx").hidden=!!emb||!!(R.noCtx&&R.noCtx(S.tab));
   if(emb){v.innerHTML=vEmbed(emb);v.style.padding="0";v.style.maxWidth="none";return}
   v.style.padding="";v.style.maxWidth="";
-  if(!S.D){v.innerHTML='<div class="empty">'+(CFG.API?"بيحمّل البيانات...":"اضبط رابط الـ API في config.js الأول")+"</div>";return}
-  v.innerHTML=({overview:vOverview,transfers:vTransfers,teams:vTeams,members:vMembers,players:vPlayers}[S.tab]||vOverview)()}
+  if(!S.D&&!R.views[S.tab]){v.innerHTML='<div class="empty">'+(CFG.API?"بيحمّل البيانات...":"اضبط رابط الـ API في config.js الأول")+"</div>";return}
+  var rv=R.views[S.tab];
+  v.innerHTML=rv?rv():(R.tableView&&R.tableView(S.tab))||({overview:vOverview,transfers:vTransfers,teams:vTeams,members:vMembers,players:vPlayers}[S.tab]||vOverview)();
+  if(R.afterRender)R.afterRender()}
 
 /* ===== الشبكة ===== */
 function api(q){return fetch(CFG.API+"?"+new URLSearchParams(q)).then(function(r){return r.json()})}
@@ -404,17 +461,19 @@ function load(force){
   S.busy=true;
   return api({api:"gw",gw:gw,force:force?1:0}).then(function(d){
     if(!d||d.success===false){toast((d&&d.message)||"تعذّر التحميل");if(d&&d.members){}else return}
-    S.D=d;derive();render();try{localStorage.setItem("fc_gw_"+gw,JSON.stringify(d))}catch(e){}
+    S.D=d;S.WI={};derive();render();try{localStorage.setItem("fc_gw_"+gw,JSON.stringify(d))}catch(e){}
+    R.hooks.afterLoad.forEach(function(f){try{f()}catch(e){console.error(e)}});
     if(d.missingTeams&&d.missingTeams.length)toast("تيمات مالهاش أعضاء: "+d.missingTeams.join("، "));
     if(d.message&&d.warn)toast(d.message)}).catch(function(){toast("مفيش اتصال بالسيرفر")}).then(function(){S.busy=false})}
 function refreshLive(force){
   if(!S.D||!CFG.API)return Promise.resolve();
-  return api({api:force?"live":"liveCached",gw:S.gw}).then(function(r){var L=force?(r&&r.live):r&&r.live;if(L&&(!S.D.live||L.updatedAt>S.D.live.updatedAt)){S.D.live=L;derive();render();if(force)toast("اتحدّث اللايف")}else if(force)toast((r&&r.message)||"مفيش جديد")}).catch(function(){if(force)toast("تعذّر تحديث اللايف")})}
+  return api({api:force?"live":"liveCached",gw:S.gw}).then(function(r){var L=force?(r&&r.live):r&&r.live;if(L&&(!S.D.live||L.updatedAt>S.D.live.updatedAt)){R.hooks.beforeLive.forEach(function(f){try{f()}catch(e){}});S.D.live=L;derive();render();R.hooks.afterLive.forEach(function(f){try{f()}catch(e){}});if(force)toast("اتحدّث اللايف")}else if(force)toast((r&&r.message)||"مفيش جديد")}).catch(function(){if(force)toast("تعذّر تحديث اللايف")})}
 function setTab(t){S.tab=t;save();S.stack=[];paintSheet();render();window.scrollTo(0,0)}
 
 /* ===== الأحداث ===== */
 document.addEventListener("click",function(e){
   var t=e.target;
+  if(R.click&&R.click(e))return;
   var a=t.closest("[data-act]");
   if(a){var k=a.getAttribute("data-act"),v=a.getAttribute("data-arg");if(k==="m")openMember(v);else if(k==="t")openTeam(v);else if(k==="p")openPlayer(Number(v));return}
   var tb=t.closest("[data-tab]");if(tb){setTab(tb.getAttribute("data-tab"));return}
@@ -437,6 +496,8 @@ document.addEventListener("click",function(e){
   if(t.closest("#syn")){var k2=localStorage.getItem("fc_key")||prompt("مفتاح الأدمن (ADMIN_KEY):","");if(!k2)return;localStorage.setItem("fc_key",k2);var tm=prompt("اسم التيم لتحديثه لوحده، أو سيبه فاضي لكل التيمات:","");if(tm===null)return;toast("بيجيب الأعضاء من الليغات... ممكن ياخد شوية");api({api:"sync",key:k2,team:tm.trim()}).then(function(r){toast((r&&r.message)||"تم");if(r&&r.success)load(true)}).catch(function(){toast("تعذّر التحديث")});return}
   if(t.id==="modal"){$("#modal").classList.remove("show")}
 });
+document.addEventListener("change",function(e){if(R.change)R.change(e)});
+document.addEventListener("input",function(e){if(R.input)R.input(e)});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"){if($("#modal").classList.contains("show"))$("#modal").classList.remove("show");else if(S.stack.length)pop();else document.body.classList.remove("dro")}});
 $("#mn").innerHTML=ic("menu",22);$("#sr").innerHTML=ic("search",22);$("#cp").innerHTML=ic("cam",22);
 look();render();
@@ -449,8 +510,11 @@ setInterval(function(){if(!document.hidden)refreshLive(false)},60000);
   if(S.gw){go();return}
   api({api:"cur"}).then(function(r){S.cur=r.gw||1;S.gw=S.cur;save();go()}).catch(function(){S.gw=1;go()});
   api({api:"cur"}).then(function(r){S.cur=r.gw}).catch(function(){})})();
-window.__fc={S:S,derive:derive,render:render,WM:WM,teamAgg:teamAgg,ownership:ownership,openMember:openMember,openPlayer:openPlayer,openTeam:openTeam,openFilters:openFilters,openSearch:openSearch,drillHtml:drillHtml,vOverview:vOverview,vMembers:vMembers,vTeams:vTeams,vPlayers:vPlayers,vTransfers:vTransfers};
+window.__fc={R:R,S:S,P:P,pPts:pPts,pStat:pStat,isPlayed:isPlayed,esc:esc,num:num,r1:r1,sgn:sgn,act:act,av:av,ini:ini,card:card,cam:cam,toast:toast,api:api,ic:ic,push:push,pop:pop,paintSheet:paintSheet,setTab:setTab,capture:capture,save:save,look:look,derive:derive,render:render,WM:WM,teamAgg:teamAgg,ownership:ownership,trGain:trGain,CFG:CFG,load:load,refreshLive:refreshLive,openMember:openMember,openPlayer:openPlayer,openTeam:openTeam,openFilters:openFilters,openSearch:openSearch,drillHtml:drillHtml,vOverview:vOverview,vMembers:vMembers,vTeams:vTeams,vPlayers:vPlayers,vTransfers:vTransfers,chipOf:chipOf,initP:initP,$:$,$$:$$};
 })();
 </script>
+<script src="plus.js"></script>
+<script src="tables.js"></script>
+<script src="compare.js"></script>
 </body>
 </html>
