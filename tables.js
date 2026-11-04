@@ -64,6 +64,11 @@ var chipNm={wildcard:"وايلد كارد",freehit:"فري هيت","3xc":"ترب
 function col(k,l,v,o){var c={k:k,l:l,v:v,num:true};if(o)for(var q in o)c[q]=o[q];return c}
 function sum(a,f){return a.reduce(function(s,x){return s+(Number(f(x))||0)},0)}
 
+/* ---------- تغيّر الترتيب (▲ ▼) ---------- */
+var RK={};try{RK=JSON.parse(LS.get("fc_rk")||"{}")}catch(e){}
+function curRanks(){var wm=WM(),T=tAgg(wm),rt={},rm={};T.forEach(function(r,i){rt[r.team]=i+1});wm.slice().sort(function(a,b){return b.d.net-a.d.net}).forEach(function(m,i){rm[m.uid]=i+1});return{t:rt,m:rm}}
+R.hooks.beforeLive.push(function(){if(!S.D)return;RK[S.gw]=curRanks();LS.set("fc_rk",JSON.stringify(RK))});
+function rkH(n,prev){var d=prev==null?0:prev-n;return'<span class="rkc"><b class="rk n">'+n+"</b>"+(d>0?'<small class="up n">▲'+d+"</small>":d<0?'<small class="dn n">▼'+(-d)+"</small>":"")+"</span>"}
 /* ---------- أعمدة الأعضاء ---------- */
 function membersCols(wm){
   var anyT=selOn(),rk={},L=live();wm.slice().sort(function(a,b){return b.d.net-a.d.net}).forEach(function(m,i){rk[m.uid]=i+1});
@@ -71,7 +76,7 @@ function membersCols(wm){
   var capOk=function(m){return anyT&&m.d.eff&&hit(m.d.eff.id)},viceOk=function(m){return anyT&&m.d.vice&&hit(m.d.vice.id)};
   var ptsOf=function(l,xi){return sum(l,function(x){return num(x.pts)*(xi?x.mult:1)})};
   var base=[
-    col("rank","ترتيب المسابقة",function(m){return rk[m.uid]}),
+    col("rank","ترتيب المسابقة",function(m){return rk[m.uid]},{h:function(m){return rkH(rk[m.uid],(RK[S.gw]||{m:{}}).m[m.uid])}}),
     col("person","الشخص",function(m){return m.person},{num:false}),
     col("team","التيم",function(m){return m.team},{num:false}),
     col("mS","لاعيبة أساسي",function(m){return mS(m).map(function(x){return P(x.id).n}).join(", ")},{num:false,wr:1,h:function(m){return nms(mS(m),true)}}),
@@ -130,7 +135,7 @@ function teamsCols(wm){
   var L=live(),sel=selOn(),ST=oext(wm),rk={};
   var tl=tAgg(wm);tl.forEach(function(R2,i){rk[R2.team]=i+1;R2.avg=R2.n?r1(R2.points/R2.n):0;var c={};R2.capIds.forEach(function(id){c[id]=(c[id]||0)+1});var b=null;Object.keys(c).forEach(function(id){if(!b||c[id]>b.n)b={id:Number(id),n:c[id]}});R2.capName=b?P(b.id).n:""});
   var N=function(k,l,o){return col(k,l,function(R2){return R2[k]},o||{})};
-  var base=[col("rank","الترتيب",function(R2){return rk[R2.team]}),col("team","التيم",function(R2){return R2.team},{num:false}),N("n","الأعضاء"),N("points","النقاط"),N("cost","السوالب"),N("net","الصافي"),N("avg","المتوسط"),N("bench","نقاط الدكة"),N("left","لسه هيلعبوا",{def:L}),N("played","لعبوا",{def:false}),
+  var base=[col("rank","الترتيب",function(R2){return rk[R2.team]},{h:function(R2){return rkH(rk[R2.team],(RK[S.gw]||{t:{}}).t[R2.team])}}),col("team","التيم",function(R2){return R2.team},{num:false}),N("n","الأعضاء"),N("points","النقاط"),N("cost","السوالب"),N("net","الصافي"),N("avg","المتوسط"),N("bench","نقاط الدكة"),N("left","لسه هيلعبوا",{def:L}),N("played","لعبوا",{def:false}),
     N("buy","اشترى",{def:sel}),N("sell","باع",{def:sel}),N("bts","اشترى ثم باع",{def:sel}),N("stb","باع ثم اشترى",{def:sel}),N("wild","وايلد كارد"),N("fh","فري هيت"),N("tc","تربيل كابتن"),N("bb","بنش بوست"),
     col("tchips","مجموع الخواص",function(R2){return R2.wild+R2.fh+R2.tc+R2.bb}),
     N("selS","أساسي",{def:sel}),N("selB","دكة",{def:sel}),N("ptsS","نقاط الأساسيين",{def:sel}),N("ptsB","نقاط الدكة (المختارين)",{def:false}),N("capCnt","عدد الكابتن",{def:sel}),
@@ -140,6 +145,23 @@ function teamsCols(wm){
   var ex=PL?PL.cols.teams(wm).filter(function(c){return["x_trg","x_trh","x_trn","x_chn","x_chg","x_topcap","x_above","x_dprev","x_gap","x_ppm","x_star"].indexOf(c.k)>-1}):[];
   return{cols:base.concat(ex),rows:tl}}
 
+/* ---------- نافذة التيم (جدول زي الأصلي) ---------- */
+R.openTeam=function(team){
+  if(!S.D)return false;var wm=WM().filter(function(m){return m.team===team});if(!wm.length)return false;
+  var sel=selOn(),w=timeWin(),dc=S.F.capTeam,L=live();
+  var k=function(m){return dc&&m.isCaptain?(m.capMult||1):1};
+  var S1=function(m){return sel?m.d.xi.filter(function(x){return hit(x.id)}):[]},B1=function(m){return sel?m.d.bn.filter(function(x){return hit(x.id)}):[]};
+  var trs=function(m,i){return m.transfers.filter(function(x){return w(Date.parse(x[2])||null)}).map(function(x){return x[i]}).filter(function(id){return!sel||hit(id)}).map(function(id){return{id:id,pts:null,mult:1}})};
+  var cols=[col("person","العضو",function(m){return m.person},{num:false}),col("count","عدد اللاعيبة",function(m){return(S1(m).length+B1(m).length)*k(m)},{def:sel}),
+    col("start","أساسي",function(m){return S1(m).length},{wr:1,def:sel,h:function(m){return nms(S1(m),true)}}),col("bench","دكة",function(m){return B1(m).length},{wr:1,def:sel,h:function(m){return nms(B1(m),true)}}),
+    col("buy","اشترى",function(m){return trs(m,0).length},{wr:1,h:function(m){return nms(trs(m,0))}}),col("sell","باع",function(m){return trs(m,1).length},{wr:1,h:function(m){return nms(trs(m,1))}}),
+    col("cap","كابتن التيم",function(m){return m.isCaptain?1:0},{h:function(m){return m.isCaptain?'<span class="chip ac">كابتن'+(dc&&m.capMult>1?" ×"+m.capMult:"")+"</span>":'<span class="mut">–</span>'}}),
+    col("capName","الكابتن بتاعه",function(m){return m.d.eff?P(m.d.eff.id).n:""},{num:false}),
+    col("cost","السوالب",function(m){return m.cost*k(m)}),col("points","النقاط",function(m){return m.d.points*k(m)}),col("net","الصافي",function(m){return m.d.net*k(m)}),col("left","لسه هيلعب",function(m){return m.d.left},{def:L}),col("chip","الخاصية",function(m){return chipNm[m.chip]||""},{num:false})];
+  var make=function(){return window.__grid.render({key:"teamModal",title:"تيم "+team,rows:wm,cols:cols,rowKey:function(m){return m.uid},rc:false,defSort:function(a,b){return b.d.net*k(b)-a.d.net*k(a)},act:function(m){return' data-act="m" data-arg="'+esc(m.uid)+'"'},sheetFn:function(){return make()},sheetKind:"team",
+    totals:function(l){var t={person:"الإجمالي - "+l.length+" عضو"};["count","cost","points","net","left"].forEach(function(c){t[c]=sum(l,cols.find(function(x){return x.k===c}).v)});return t}})};
+  F.push("تيم "+team,make(),"team");
+  return true};
 /* ---------- أعمدة اللاعيبة ---------- */
 function playersCols(wm){
   var ST=oext(wm),L=live();
@@ -151,7 +173,7 @@ function playersCols(wm){
     col("pts","النقاط",function(s){return L?num(pPts(s.id)):""}),col("min","الدقايق",function(s){return L&&S.D.live.el[s.id]?S.D.live.el[s.id][0]:""},{def:false}),
     col("status","الحالة",function(s){return L?({played:"لعب",playing:"بيلعب",live0:"لسه ماجاش",pending:"لسه",dnp:"ملعبش"})[pStat(s.id)]:""},{num:false}),
     col("buy","اتشرى",function(s){return s.buy}),col("sell","اتباع",function(s){return s.sell}),col("netT","صافي التحويلات",function(s){return s.buy-s.sell},{h:function(s){return sg(s.buy-s.sell)}}),col("sel","امتلاكه في العالم %",function(s){return P(s.id).sel},{def:false})];
-  var ex=PL?PL.cols.players().filter(function(c){return c.k!=="x_vsw"||true}):[];
+  var ex=PL?PL.cols.players():[];
   return{cols:base.concat(ex),rows:rows}}
 
 /* ---------- أعمدة التحويلات ---------- */
@@ -171,39 +193,26 @@ function transfersCols(wm){
   return{cols:base.concat(ex),rows:rows}}
 
 /* ---------- محرك الجداول ---------- */
-var LAST={};
-function tbl(key,rows,cols,o){
-  var st=TB[key]||(TB[key]={sort:null,hide:{}}),a=A();
-  var vis=cols.filter(function(c){var h=st.hide[c.k];return h==null?c.def!==false:!h});
-  var list=rows.slice(),sc=st.sort&&cols.find(function(c){return c.k===st.sort.k});
-  if(sc)list.sort(function(x,y){var u=sc.v(x),w=sc.v(y),e1=u===""||u==null,e2=w===""||w==null;if(e1&&e2)return 0;if(e1)return 1;if(e2)return-1;var d=typeof u==="number"&&typeof w==="number"?u-w:String(u).localeCompare(String(w),"ar");return d*st.sort.dir});
-  else if(o.defSort)list.sort(o.defSort);
-  if(a.top&&o.teamOf){var seen={};list=list.filter(function(r){var t=o.teamOf(r);if(seen[t])return false;seen[t]=1;return true})}
-  if(a.limit!=="all")list=list.slice(0,Number(a.limit));
-  LAST[key]={vis:vis,list:list};
-  var head=vis.map(function(c){return'<th data-sk="'+key+":"+c.k+'">'+esc(c.l)+(st.sort&&st.sort.k===c.k?'<span class="arr">'+(st.sort.dir>0?"▲":"▼")+"</span>":"")+"</th>"}).join("");
-  var body=list.map(function(r){return"<tr"+(o.act?o.act(r):"")+">"+vis.map(function(c){var v;try{v=c.h?c.h(r):esc(fmt(c.v(r)))}catch(e){v=""}return"<td"+(c.wr?' class="wr"':"")+">"+v+"</td>"}).join("")+"</tr>"}).join("")||'<tr><td colspan="'+vis.length+'" class="mut" style="text-align:center;padding:30px">مفيش نتائج بالفلاتر دي</td></tr>';
-  var tot="";if(o.totals&&list.length){var t=o.totals(list),first=true;tot='<tr class="tot">'+vis.map(function(c){var v=t[c.k];if(first){first=false;return"<td>"+(v!=null?esc(String(v)):"الإجمالي")+"</td>"}return"<td>"+(v!=null?esc(fmt(v)):"")+"</td>"}).join("")+"</tr>"}
-  var bar='<div class="tbar" style="margin-top:0"><button class="chip" data-tb="cols:'+key+'">الأعمدة</button><button class="chip" data-tb="csv:'+key+'">CSV</button><button class="chip" data-tb="copy:'+key+'">نسخ</button><span class="mut" style="margin-inline-start:auto">'+list.length+" صف</span></div>";
-  return bar+'<div class="tw" data-t="'+esc(o.title)+'"><table class="gt"><thead><tr>'+head+"</tr></thead><tbody>"+body+tot+"</tbody></table></div>"}
+function topPost(teamOf){return function(list){var seen={};return list.filter(function(r){var t=teamOf(r);if(seen[t])return false;seen[t]=1;return true})}}
+function tbl(key,rows,cols,o){return window.__grid.render({key:key,title:o.title,rows:rows,cols:cols,rowKey:o.rowKey,defSort:o.defSort,totals:o.totals,act:o.act,post:(o.teamOf&&A().top)?topPost(o.teamOf):null})}
 function fmt(v){return typeof v==="number"?(Math.round(v*10)/10).toLocaleString("en-US"):v==null?"":v}
 
 R.tableView=function(tab){
-  if(VM[tab]!=="table"||!S.D)return null;var wm=WM();
-  if(tab==="members"){var cols=membersCols(wm);return tbl("members",wm,cols,{title:"الأعضاء",defSort:function(a,b){return b.d.net-a.d.net},act:function(m){return' data-act="m" data-arg="'+esc(m.uid)+'"'},teamOf:function(m){return m.team},
+  if(VM[tab]==="cards"||!S.D)return null;var wm=WM();
+  if(tab==="members"){var cols=membersCols(wm);return tbl("members",wm,cols,{title:"الأعضاء",rowKey:function(m){return m.uid},defSort:function(a,b){return b.d.net-a.d.net},act:function(m){return' data-act="m" data-arg="'+esc(m.uid)+'"'},teamOf:function(m){return m.team},
     totals:function(l){var t={rank:"الإجمالي - "+l.length+" عضو"};cols.forEach(function(c){if(c.num&&["rank","orank","value","bank","x_star","x_share","x_played","x_dprev","x_form"].indexOf(c.k)<0&&c.k.indexOf("x_")!==0)t[c.k]=sum(l,c.v)});return t}})}
-  if(tab==="teams"){var x=teamsCols(wm);return tbl("teams",x.rows,x.cols,{title:"التيمات",act:function(r){return' data-act="t" data-arg="'+esc(r.team)+'"'},defSort:function(a,b){return b.net-a.net}})}
-  if(tab==="players"){var y=playersCols(wm);return tbl("players",y.rows,y.cols,{title:"اللاعيبة",act:function(s){return' data-act="p" data-arg="'+s.id+'"'},defSort:function(a,b){return b.own-a.own||b.cap-a.cap}})}
-  if(tab==="transfers"){var z=transfersCols(wm);return tbl("transfers",z.rows,z.cols,{title:"التحويلات",teamOf:function(r){return r.m.team},act:function(r){return' data-act="m" data-arg="'+esc(r.m.uid)+'"'},defSort:function(a,b){return b.t-a.t}})}
+  if(tab==="teams"){var x=teamsCols(wm);return tbl("teams",x.rows,x.cols,{title:"التيمات",rowKey:function(r){return r.team},act:function(r){return' data-act="t" data-arg="'+esc(r.team)+'"'},defSort:function(a,b){return b.net-a.net}})}
+  if(tab==="players"){var y=playersCols(wm);return tbl("players",y.rows,y.cols,{title:"اللاعيبة",rowKey:function(s){return String(s.id)},act:function(s){return' data-act="p" data-arg="'+s.id+'"'},defSort:function(a,b){return b.own-a.own||b.cap-a.cap}})}
+  if(tab==="transfers"){var z=transfersCols(wm);return tbl("transfers",z.rows,z.cols,{title:"التحويلات",rowKey:function(r){return r.k},teamOf:function(r){return r.m.team},act:function(r){return' data-act="m" data-arg="'+esc(r.m.uid)+'"'},defSort:function(a,b){return b.t-a.t}})}
   return null};
 
 var prevAfter=R.afterRender;
 R.afterRender=function(){
   if(prevAfter)prevAfter();
   var tab=S.tab;if(["members","teams","players","transfers"].indexOf(tab)<0||!S.D)return;
-  var v=F.$("#view"),m=VM[tab]==="table"?"table":"cards";
+  var v=F.$("#view"),m=VM[tab]==="cards"?"cards":"table";
   v.insertAdjacentHTML("afterbegin",'<div class="tbar"><div class="sg"><button data-vm="'+tab+':cards" class="'+(m==="cards"?"on":"")+'">بطاقات</button><button data-vm="'+tab+':table" class="'+(m==="table"?"on":"")+'">جدول كامل</button></div><button class="chip" data-adv-open>فلاتر متقدمة'+(advCount()?' <b class="up n">'+advCount()+"</b>":"")+"</button></div>")};
-function advCount(){var a=A(),n=0;["sp","sc","spos","must","xp","xc","xpos","xany","xmust","chips"].forEach(function(k){if(a[k].length)n++});["caps","top","lastBuy","lastSell","diff"].forEach(function(k){if(a[k])n++});if(a.minOwn)n++;if(a.tFrom||a.tTo)n++;if(a.limit!=="all")n++;if(a.dir!=="all")n++;if(S.F.play!=="all")n++;return n}
+function advCount(){var a=A(),n=0;["sp","sc","spos","must","xp","xc","xpos","xany","xmust","chips"].forEach(function(k){if(a[k].length)n++});["caps","top","lastBuy","lastSell","diff"].forEach(function(k){if(a[k])n++});if(a.minOwn)n++;if(a.tFrom||a.tTo)n++;if(a.dir!=="all")n++;if(S.F.play!=="all")n++;return n}
 
 /* ---------- الفلاتر المتقدمة ---------- */
 var PKS=null;
@@ -231,7 +240,7 @@ function advHtml(){
    '<div class="tbar"><label class="mut" style="flex:1">من وقت<input type="datetime-local" data-aval="tFrom" value="'+esc(a.tFrom)+'" class="sr" style="margin-top:4px"></label><label class="mut" style="flex:1">لحد وقت<input type="datetime-local" data-aval="tTo" value="'+esc(a.tTo)+'" class="sr" style="margin-top:4px"></label></div>'+
    '<div class="sec">عام</div><div class="chips" style="flex-wrap:wrap">'+pill("كباتن التيمات بس","caps",a.caps)+pill("أول واحد لكل تيم","top",a.top)+pill("الديفرنشيال بس (20% أو أقل)","diff",a.diff)+"</div>"+
    '<div class="sec">حالة اللعب (من اللايف)</div>'+seg("play",[["all","الكل"],["played","لعب"],["pending","لسه"],["dnp","ملعبش"]],S.F.play)+
-   '<div class="tbar"><label class="mut" style="flex:1">أقل نسبة امتلاك %<input type="number" min="0" max="100" data-aval="minOwn" value="'+(a.minOwn||"")+'" class="sr" style="margin-top:4px"></label><label class="mut" style="flex:1">عدد الصفوف<select data-aval="limit" class="sr" style="margin-top:4px">'+["all","5","10","20","30","50"].map(function(x){return'<option value="'+x+'"'+(a.limit===x?" selected":"")+">"+(x==="all"?"كل الصفوف":"أول "+x)+"</option>"}).join("")+"</select></label></div>"+
+   '<div class="tbar"><label class="mut" style="flex:1">أقل نسبة امتلاك %<input type="number" min="0" max="100" data-aval="minOwn" value="'+(a.minOwn||"")+'" class="sr" style="margin-top:4px"></label></div>'+
    '<div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:18px"><button class="btn b2" data-advclr>مسح الكل</button><button class="btn b1" data-advok>تطبيق</button></div>'}
 R.openAdv=function(){if(!S.D){toast("حمّل الجولة الأول");return}F.push("فلاتر متقدمة",advHtml(),"adv")};
 function refreshAdv(){var top=F.$("#sheet").scrollTop;F.pop();R.openAdv();F.$("#sheet").scrollTop=top}
@@ -239,16 +248,8 @@ function refreshAdv(){var top=F.$("#sheet").scrollTop;F.pop();R.openAdv();F.$("#
 R.click=(function(prev){return function(e){
   if(prev&&prev(e))return true;
   var t=e.target,a=A(),m;
-  if((m=t.closest("[data-sk]"))){var p=m.getAttribute("data-sk").split(":"),st=TB[p[0]]||(TB[p[0]]={sort:null,hide:{}});st.sort=st.sort&&st.sort.k===p[1]?{k:p[1],dir:-st.sort.dir}:{k:p[1],dir:-1};saveV();F.render();return true}
   if((m=t.closest("[data-vm]"))){var q=m.getAttribute("data-vm").split(":");VM[q[0]]=q[1];saveV();F.render();return true}
   if(t.closest("[data-adv-open]")){R.openAdv();return true}
-  if((m=t.closest("[data-tb]"))){var u=m.getAttribute("data-tb").split(":"),k=u[1];
-    if(u[0]==="cols"){var cols=colsFor(k);F.push("الأعمدة",'<div class="tbar" style="margin-top:0"><button class="chip" data-ckall="'+k+':1">الكل</button><button class="chip" data-ckall="'+k+':0">ولا حاجة</button></div>'+cols.map(function(c){var h=(TB[k]||{hide:{}}).hide[c.k],on=h==null?c.def!==false:!h;return'<div class="opt '+(on?"on":"")+'" data-ck="'+k+":"+c.k+'"><span class="cb">'+(on?"✓":"")+"</span><b>"+esc(c.l)+"</b></div>"}).join(""),"cols");return true}
-    var L2=LAST[k];if(!L2)return true;var rows=[L2.vis.map(function(c){return c.l})].concat(L2.list.map(function(r){return L2.vis.map(function(c){var v=c.v(r);return v==null?"":v})}));
-    if(u[0]==="csv"){var csv="\uFEFF"+rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"'}).join(",")}).join("\r\n"),url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),aa=document.createElement("a");aa.href=url;aa.download="فانتازي-ج"+S.gw+"-"+k+".csv";document.body.appendChild(aa);aa.click();aa.remove();setTimeout(function(){URL.revokeObjectURL(url)},2000)}
-    else navigator.clipboard&&navigator.clipboard.writeText(rows.map(function(r){return r.join("\t")}).join("\n")).then(function(){toast("اتنسخ الجدول - الصقه في شيت")});return true}
-  if((m=t.closest("[data-ck]"))){var w=m.getAttribute("data-ck").split(":"),st2=TB[w[0]]||(TB[w[0]]={sort:null,hide:{}}),cc=colsFor(w[0]).find(function(c){return c.k===w[1]}),cur=st2.hide[w[1]]==null?cc.def!==false:!st2.hide[w[1]];st2.hide[w[1]]=cur;saveV();m.classList.toggle("on",!cur);m.querySelector(".cb").textContent=cur?"":"✓";F.render();return true}
-  if((m=t.closest("[data-ckall]"))){var z=m.getAttribute("data-ckall").split(":"),st3=TB[z[0]]||(TB[z[0]]={sort:null,hide:{}});colsFor(z[0]).forEach(function(c){st3.hide[c.k]=z[1]!=="1"});saveV();F.pop();F.render();R.click({target:{closest:function(s){return s==="[data-tb]"?{getAttribute:function(){return"cols:"+z[0]}}:null}}});return true}
   if((m=t.closest("[data-pkopen]"))){openPicker(m.getAttribute("data-pkopen"));return true}
   if((m=t.closest("[data-popt]"))){var v=m.getAttribute("data-popt"),arr=a[PKS.key],i=arr.indexOf(v);if(i>-1)arr.splice(i,1);else arr.push(v);m.classList.toggle("on");m.querySelector(".cb").textContent=i>-1?"":"✓";return true}
   if(t.closest("[data-pkdone]")){F.pop();refreshAdv();return true}
@@ -263,7 +264,6 @@ R.click=(function(prev){return function(e){
   if(t.closest("#lnk")){var st4={gw:S.gw,tab:S.tab,F:S.F},b=btoa(unescape(encodeURIComponent(JSON.stringify(st4)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""),url2=location.href.split("#")[0]+"#s="+b;navigator.clipboard&&navigator.clipboard.writeText(url2).then(function(){toast("اتنسخ رابط بنفس الجولة والفلاتر")});return true}
   if(t.closest("#aut")){var key=LS.get("fc_key")||prompt("مفتاح الأدمن (ADMIN_KEY):","");if(!key)return true;LS.set("fc_key",key);F.api({api:"autoLive",key:key,on:"toggle"}).then(function(r){toast((r&&r.message)||"تم")}).catch(function(){toast("تعذّر تغيير التحديث التلقائي")});return true}
   return false}})(R.click);
-function colsFor(k){var wm=WM();return k==="members"?membersCols(wm):k==="teams"?teamsCols(wm).cols:k==="players"?playersCols(wm).cols:transfersCols(wm).cols}
 R.input=(function(prev){return function(e){if(prev)prev(e);var t=e.target;
   if(t.id==="pkq"&&PKS){PKS.q=t.value;F.$("#pkl").innerHTML=pkList()}}})(R.input);
 R.change=(function(prev){return function(e){if(prev)prev(e);var t=e.target,k=t.getAttribute&&t.getAttribute("data-aval");
