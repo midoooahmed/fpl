@@ -662,16 +662,17 @@ function drawCmp2(){
    '<div class="sec">عند '+esc(a.person)+" بس ("+oa.length+")</div>"+lst(oa,A)+'<div class="sec">مشتركين ('+common.length+")</div>"+lst(common,A)+'<div class="sec">عند '+esc(b.person)+" بس ("+ob.length+")</div>"+lst(ob,B)+'<div class="lg" style="margin-top:10px"><span><i></i>اللعيب اللي لعب متظلل بالأخضر</span></div>'}
 R.cmp2=cmp2Sheet;
 
-R.click=function(e){
+R.click=(function(prev){return function(e){
+  if(prev&&prev(e))return true;
   var t=e.target;
   var fv=t.closest("[data-fav]");if(fv){var p=fv.getAttribute("data-fav").split(":"),k=p[0],key=p.slice(1).join(":");if(FAV[k][key])delete FAV[k][key];else FAV[k][key]=1;LS.set("shwayaFav",JSON.stringify(FAV));F.render();return true}
   var pl=t.closest("[data-plus]");if(pl){var a=pl.getAttribute("data-plus");if(a==="search")F.openSearch();else if(a==="wi")wiSheet();else if(a==="kiosk")toggleKiosk();else if(a==="cmp2")cmp2Sheet();else if(a==="wa"&&CTX)navigator.clipboard&&navigator.clipboard.writeText(waText(CTX)).then(function(){toast("اتنسخ الملخص - الصقه في الواتساب")});return true}
   if(t.closest("[data-wireset]")){S.WI={};F.derive();wiSheet();F.render();return true}
   var wb=t.closest("[data-wi]");if(wb){var q=wb.getAttribute("data-wi").split(":"),id=Number(q[0]);S.WI[id]=num(pPts(id))+Number(q[1]);F.derive();var top=F.$("#sheet").scrollTop;F.pop();wiSheet();F.$("#sheet").scrollTop=top;F.render();return true}
-  return false};
-R.change=function(e){var t=e.target;
+  return false}})(R.click);
+R.change=(function(prev){return function(e){if(prev)prev(e);var t=e.target;
   if(t.id==="meSel"){LS.set("shwayaMe",t.value);F.render()}
-  if(t.id==="c2a"||t.id==="c2b"){CM[t.id==="c2a"?"a":"b"]=t.value;drawCmp2()}};
+  if(t.id==="c2a"||t.id==="c2b"){CM[t.id==="c2a"?"a":"b"]=t.value;drawCmp2()}}})(R.change);
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&KI)stopKiosk()});
 window.__plus={cols:{members:memberCols,teams:teamCols,players:playerCols,transfers:transferCols},isFav:isFav,star:star,C:C,teamAgg2:teamAgg2,trGain:trGain,chipUser:chipUser,jac:jac,hMember:hMember,HISTf:function(){return HIST},formOf:formOf,regret:regret,meMember:meMember};
 })();
