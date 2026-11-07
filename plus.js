@@ -190,31 +190,7 @@ function star(k, key) { var o = isFav(k, key); return '<button type="button" cla
         { def: true, h: function (r) { if (!L || !r.i || !r.o) return '<span class="mut">–</span>'; var g = num(pPts(r.i)) - num(pPts(r.o)); return g > 0 ? '<span class="tag chip-mg">ناجحة ✓</span>' : g < 0 ? '<span class="tag chip-wc">فاشلة ✕</span>' : '<span class="tag">متعادلة</span>'; } }),
       C("x_ddl", "قبل الديدلاين بـ (ساعة)", function (r) { return dl && r.ms ? r1((dl - r.ms) / 36e5) : ""; })
     ];
-  }  function ppx(x, rank) {
-    var b = rank === 0 ? '<span class="bc">C</span>' : rank === 1 ? '<span class="bc" style="background:#5B45FF">V</span>' : "";
-    return '<button type="button" class="pp"' + act(x.act, x.arg) + ">" + b + '<span class="av" style="--s:54px"><b>' + esc(initials(x.name)) +
-      '</b></span><span class="pp-n">' + esc(x.name) + '</span><span class="pp-t">' + esc(x.sub) + '</span><span class="pp-p">' + x.pts + "</span></button>";
-  }
-  function pitch15(L) {
-    if (!L.length) return '<p class="mut">مفيش بيانات</p>';
-    var shape = [3, 4, 3, 1], i = 0, rows = [];
-    shape.forEach(function (n) {
-      var base = i;
-      rows.push(L.slice(i, i + n).map(function (x, k) { return ppx(x, base + k); }));
-      i += n;
-    });
-    var bench = L.slice(11, 15).map(function (x, k) { return ppx(x, 11 + k); });
-    return '<div class="pitch">' + rows.map(function (r) { return r.length ? '<div class="prow">' + r.join("") + "</div>" : ""; }).join("") +
-      (bench.length ? '<div class="bench-row"><span class="lbl">الدكة</span><div class="prow" style="margin:8px 0 0">' + bench.join("") + "</div></div>" : "") + "</div>";
-  }
-  function memberPitch(wm, worst) {
-    return pitch15(wm.slice().sort(function (a, b) { return worst ? a.d.net - b.d.net : b.d.net - a.d.net; }).slice(0, 15)
-      .map(function (m) { return { name: m.person, sub: m.team, pts: m.d.net, act: "member", arg: m.uid }; }));
-  }
-  function teamPitch(T, worst) {
-    return pitch15(T.slice().sort(function (a, b) { return worst ? a.net - b.net : b.net - a.net; }).slice(0, 15)
-      .map(function (R) { return { name: R.team, sub: R.n + " أعضاء", pts: R.net, act: "team", arg: R.team }; }));
-  }
+  }  
 
   // ---------------------------------------------------------------
   // الكروت
@@ -309,15 +285,6 @@ function star(k, key) { var o = isFav(k, key); return '<button type="button" cla
     rest.sort(function (a, b) { return score(b.s) - score(a.s); });
     rest.forEach(function (r) { if (sel.length < 11 && cnt[r.k] < max[r.k]) { sel.push(r.s); cnt[r.k]++; } });
     return sel;
-  }
-  function xiPitch(sel) {
-    var rows = ["GKP", "DEF", "MID", "FWD"].map(function (p) {
-      return '<div class="prow">' + sel.filter(function (s) { return P(s.id).pos === p; }).map(function (s) {
-        return ppCard({ id: s.id, st: pStat(s.id), pts: pPts(s.id), mult: 1, inXI: true, vice: false, subIn: false, subOut: false });
-      }).join("") + "</div>";
-    });
-    var total = sum(sel, function (s) { return num(pPts(s.id)); });
-    return '<div class="pitch">' + rows.join("") + "</div>" + '<div class="lg"><span>مجموع النقاط: <b>' + total + "</b></span></div>";
   }
   function cardXIbest(c) {
     if (!c.live) return noLive("⭐ تشكيلة الجولة");
@@ -510,11 +477,14 @@ function star(k, key) { var o = isFav(k, key); return '<button type="button" cla
 
   function cardDiff(c) {
     var wm = c.wm;
-    if (wm.length < 4 || wm.length > 400) return "";
+    if (wm.length < 4) return "";
+    // متوسط نسبة التشكيلة المشتركة مع باقي الأعضاء - بيتحسب في خطوة واحدة من ملكية اللاعيبة (بدل مقارنة كل عضوين)
+    var own = {}, N = wm.length - 1;
+    wm.forEach(function (m) { pidSet(m).forEach(function (id) { own[id] = (own[id] || 0) + 1; }); });
     var L = wm.map(function (m) {
       var s = 0, n = 0;
-      wm.forEach(function (o) { if (o !== m) { s += jac(m, o); n++; } });
-      return { m: m, v: n ? Math.round(s / n * 100) : 0 };
+      pidSet(m).forEach(function (id) { s += own[id] - 1; n++; });
+      return { m: m, v: n ? Math.round(s / n / N * 100) : 0 };
     }).sort(function (a, b) { return a.v - b.v; });
     var row = function (x) { return li(act("member", x.m.uid), esc(x.m.person), esc(x.m.team), x.v + "%", ""); };
     return card("ov-half", "🧭 العضو المختلف والتقليدي (متوسط التشابه)",
@@ -543,7 +513,7 @@ function star(k, key) { var o = isFav(k, key); return '<button type="button" cla
     S.D.members.forEach(function (m) { T[m.team] = 1; });
     Object.keys(T).forEach(function (t) { if (isFav("t", t)) items.push(li(act("team", t), esc(t), "تيم", "★", "")); });
     Object.keys(FAV.p).forEach(function (id) { if (S.D.players[id]) items.push(li(act("player", id), esc(P(Number(id)).n), "لاعب · " + esc(P(Number(id)).club), live() ? num(pPts(Number(id))) : "", "")); });
-    return card("ov-half", "⭐ المفضلين", items.length ? items.join("") : '<p class="mut">دوس على ☆ في جداول الأعضاء والتيمات واللاعيبة وهيظهروا هنا.</p>');
+    return card("ov-half pl-favs", "⭐ المفضلين", items.length ? items.join("") : '<p class="mut">دوس على ☆ في جداول الأعضاء والتيمات واللاعيبة وهيظهروا هنا.</p>');
   }
 
   function cardMe(c) {
@@ -565,19 +535,6 @@ function star(k, key) { var o = isFav(k, key); return '<button type="button" cla
       '<div class="sub-h">أقرب تشكيلة ليك</div>' + sims.slice(0, 2).map(function (x) { return li(act("member", x.m.uid), esc(x.m.person), esc(x.m.team), x.v + "%", ""); }).join("") +
       '<div class="sub-h">أبعد تشكيلة عنك</div>' + sims.slice(-2).reverse().map(function (x) { return li(act("member", x.m.uid), esc(x.m.person), esc(x.m.team), x.v + "%", ""); }).join("") +
       '<div class="sub-h">عندك وعند المتصدر لأ: ' + nm(onlyMe) + '</div><div class="sub-h">عنده وعندك لأ: ' + nm(onlyLd) + "</div>");
-  }
-
-  function waText(c) {
-    var L = ["📊 ملخص الجولة " + S.D.gw, ""];
-    c.T.slice(0, 3).forEach(function (R, i) { L.push(["🥇", "🥈", "🥉"][i] + " " + R.team + " - " + R.net); });
-    var top = c.wm.slice().sort(function (a, b) { return b.d.net - a.d.net; }).slice(0, 5);
-    L.push("", "👑 أعلى الأعضاء:");
-    top.forEach(function (m, i) { L.push((i + 1) + ". " + m.person + " (" + m.team + ") - " + m.d.net); });
-    var cap = Object.keys(c.st).map(function (id) { return c.st[id]; }).sort(function (a, b) { return b.cap - a.cap; })[0];
-    if (cap && cap.cap) L.push("", "🎯 أكتر كابتن: " + P(cap.id).n + " (" + cap.cap + ")");
-    var hit = c.wm.slice().sort(function (a, b) { return b.cost - a.cost; })[0];
-    if (hit && hit.cost) L.push("💸 أكبر سوالب: " + hit.person + " (-" + hit.cost + ")");
-    return L.join("\n");
   }
 
 /* ---------- لصق مع التطبيق ---------- */
@@ -610,22 +567,82 @@ function waText(c){var L=["📊 ملخص الجولة "+S.gw,""];c.T.slice(0,3).
   var hit=c.wm.slice().sort(function(a,b){return b.cost-a.cost})[0];if(hit&&hit.cost)L.push("💸 أكبر سوالب: "+hit.person+" (-"+hit.cost+")");return L.join("\n")}
 function actionsRow(){return'<div class="chips" style="margin-top:12px"><button data-plus="search">🔍 بحث سريع</button><button data-plus="wi">🔮 ماذا لو</button><button data-plus="wa">📋 ملخص للواتساب</button><button data-plus="kiosk">📺 وضع العرض</button><button data-plus="cmp2">⚖️ مقارنة عضوين</button></div>'}
 R.tabs.push({id:"plus",name:"التحليلات"});
+var _title=R.title;R.title=function(t){return t==="plus"?"التحليلات":(_title?_title(t):null)};
+
+/* ---------- تحميل الكروت بالتدريج (ده اللي بيشيل البجز على الموبايل) ----------
+   قبل كده كل الكروت (25 كارت) كانت بتتبني مرة واحدة مع كل render. دلوقتي:
+   1) الكارت بيتبني بس لما يقرّب من الشاشة (IntersectionObserver) وكارت واحد في كل فريم
+   2) اللي اتبنى بيتخزن ومبيتحسبش تاني طول ما البيانات هي هي
+   3) مكان الكارت بيفضل محجوز بنفس ارتفاعه فمفيش قفزات في السكرول */
+(function(){var st=document.createElement("style");st.id="plusCss";st.textContent=
+".plz{border-radius:var(--r);border:1px solid var(--ln);background:var(--s1);margin-top:10px;opacity:.55}"+
+".tbl-sc{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}";
+document.head.appendChild(st)})();
+var HT={},LZ={io:null,q:[],busy:false,res:null};
+function lzBox(key){return'<div class="plz" data-lz="'+esc(key)+'" style="min-height:'+(HT[key]||140)+'px"></div>'}
+function lzStop(){if(LZ.io){try{LZ.io.disconnect()}catch(e){}LZ.io=null}LZ.q=[]}
+function lzTop(n){return n.getBoundingClientRect().top}
+function lzPump(){
+  if(LZ.busy)return;LZ.busy=true;
+  var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16)};
+  (function step(){
+    var n=LZ.q.shift();
+    if(!n){LZ.busy=false;return}
+    if(!n.isConnected){step();return}
+    var key=n.getAttribute("data-lz"),html="";
+    try{html=LZ.res(key)||""}catch(e){console.error(e)}
+    n.insertAdjacentHTML("beforebegin",html);
+    var el=html?n.previousElementSibling:null;
+    n.remove();
+    if(el)HT[key]=el.offsetHeight;
+    raf(step)})()}
+function lzRun(resolver){
+  lzStop();LZ.res=resolver;
+  var nodes=[].slice.call(document.querySelectorAll("#view [data-lz]"));
+  if(!nodes.length)return;
+  if(!("IntersectionObserver" in window)){LZ.q=nodes;lzPump();return}
+  LZ.io=new IntersectionObserver(function(es){
+    es.forEach(function(e){if(e.isIntersecting){LZ.io.unobserve(e.target);LZ.q.push(e.target)}});
+    if(LZ.q.length>1)LZ.q.sort(function(a,b){return lzTop(a)-lzTop(b)});
+    lzPump()},{rootMargin:"900px 0px"});
+  nodes.forEach(function(n){LZ.io.observe(n)})}
+
+var BUILD={awards:cardAwards,trTeams:cardTrTeams,wave:cardWave,chips:cardChips,subsLuck:cardSubsLuck,
+  capFail:cardCapFail,regret:cardRegret,herd:cardHerd,
+  starFlop:cardStarFlop,impact:cardImpact,decision:cardDecision,fix:cardFix,xiBest:cardXIbest,xiMajor:cardXImajor,injured:cardInjured,
+  formations:cardFormations,positions:cardPositions,clubs:cardClubs,world:cardWorld,race:cardRace,
+  me:cardMe,matrix:cardMatrix,diff:cardDiff,cumulative:cardCumulative,favs:cardFavs};
+var NOCACHE={me:1,favs:1};
+var SECTIONS=[["🏅 جوايز وتحويلات",["awards","trTeams","wave","chips","subsLuck"]],["🎯 الكباتن",["capFail","regret","herd"]],
+  ["⚽ اللاعيبة والماتشات",["starFlop","impact","decision","fix","xiBest","xiMajor","injured"]],
+  ["🧠 التكتيك والأندية",["formations","positions","clubs","world","race"]],["🧬 التشابه والتاريخ",["me","matrix","diff","cumulative","favs"]]];
+var CACHE={d:null,sig:"",h:{}};
+function sigOf(c){
+  var h=0,u=c.wm.map(function(m){return m.uid}).join(",");for(var i=0;i<u.length;i++)h=(h*31+u.charCodeAt(i))|0;
+  return[S.gw,S.D.live?S.D.live.updatedAt:0,JSON.stringify(S.F),c.wm.length,h,HISTGW+":"+(HIST?Object.keys(HIST).length:"x"),Object.keys(PREV).length,JSON.stringify(S.WI||{})].join("|")}
+function syncCache(c){var sg=sigOf(c);if(CACHE.d!==S.D||CACHE.sig!==sg){CACHE.d=S.D;CACHE.sig=sg;CACHE.h={}}}
+function plusResolve(key){
+  var fn=BUILD[key];if(!fn)return"";
+  if(!NOCACHE[key]&&CACHE.h[key]!==undefined)return CACHE.h[key];
+  var h="";try{h=fn(CTX)||""}catch(e){console.error(e)}
+  if(!NOCACHE[key])CACHE.h[key]=h;return h}
 R.views.plus=function(){
-  if(!S.D)return'<div class="empty">بيحمّل...</div>';var c=ctxP();if(!c.wm.length)return'<div class="empty">مفيش أعضاء</div>';var parts=[actionsRow()];
-  var sec=function(t){parts.push('<div class="sec" style="font-size:15px;color:var(--tx);font-weight:600">'+t+"</div>")};var add=function(fn){try{var h=fn(c);if(h)parts.push(h)}catch(e){console.error(e)}};
-  sec("🏅 جوايز وتحويلات");add(cardAwards);add(cardTrTeams);add(cardWave);add(cardChips);add(cardSubsLuck);
-  sec("🎯 الكباتن");add(cardCapFail);add(cardRegret);add(cardHerd);
-  sec("⚽ اللاعيبة والماتشات");add(cardStarFlop);add(cardImpact);add(cardDecision);add(cardFix);add(cardXIbest);add(cardXImajor);add(cardInjured);
-  sec("🧠 التكتيك والأندية");add(cardFormations);add(cardPositions);add(cardClubs);add(cardWorld);add(cardRace);
-  sec("🧬 التشابه والتاريخ");add(cardMe);add(cardMatrix);add(cardDiff);add(cardCumulative);add(cardFavs);
-  CTX=c;return parts.join("")};
+  if(!S.D)return'<div class="empty">بيحمّل...</div>';var c=ctxP();if(!c.wm.length)return'<div class="empty">مفيش أعضاء</div>';
+  CTX=c;syncCache(c);var parts=[actionsRow()];
+  SECTIONS.forEach(function(sc){
+    parts.push('<div class="sec" style="font-size:15px;color:var(--tx);font-weight:600">'+sc[0]+"</div>");
+    sc[1].forEach(function(k){parts.push(!NOCACHE[k]&&CACHE.h[k]!==undefined?CACHE.h[k]:lzBox(k))})});
+  return parts.join("")};
 var CTX=null;
+var _ra=R.afterRender;
+R.afterRender=function(){if(_ra)_ra();tickDdl();if(S.tab==="plus")lzRun(plusResolve)};
+var _sr=0;function softRender(){clearTimeout(_sr);_sr=setTimeout(function(){F.render()},250)}
 
 /* ---------- تحميل السجل والماتشات ---------- */
 R.hooks.afterLoad.push(function(){var gw=S.gw;
-  if(HISTGW!==gw){HISTGW=gw;HIST=null;F.api({api:"history",gw:gw}).then(function(h){if(S.gw===gw){HIST=h&&!h.success===false?{}:(h||{});F.render()}}).catch(function(){HIST={}})}
+  if(HISTGW!==gw){HISTGW=gw;HIST=null;F.api({api:"history",gw:gw}).then(function(h){if(S.gw===gw){HIST=(!h||h.success===false)?{}:h;softRender()}}).catch(function(){HIST={}})}
   var need=[];S.D.members.forEach(function(m){if(chipUser(m)&&!PREV[gw+"|"+m.entryId])need.push(m.entryId)});
-  if(need.length&&gw>1)F.api({api:"prev",gw:gw,ids:need.join(",")}).then(function(r){Object.keys(r||{}).forEach(function(id){PREV[gw+"|"+id]=r[id]});if(S.gw===gw)F.render()}).catch(function(){})});
+  if(need.length&&gw>1)F.api({api:"prev",gw:gw,ids:need.join(",")}).then(function(r){Object.keys(r||{}).forEach(function(id){PREV[gw+"|"+id]=r[id]});if(S.gw===gw)softRender()}).catch(function(){})});
 R.afterPlayer=function(id){
   var host=F.$("#sheet main");if(!host)return;var h=document.createElement("div");h.className="cd";h.innerHTML='<div class="k">الماتشات الجاية</div><p class="mut">بيحمّل...</p>';host.appendChild(h);
   var done=function(Fx){var t=P(id).t,cl=S.D.clubs||{},L=(Fx&&Fx[t])||[];h.innerHTML='<div class="k" style="margin-bottom:6px">الماتشات الجاية</div>'+(L.length?L.map(function(f){return'<span class="fxd d'+f[3]+'">'+esc(cl[f[1]]||f[1])+"<small>"+(f[2]?"H":"A")+" · ج"+f[0]+"</small></span>"}).join(""):'<p class="mut">مفيش ماتشات متاحة</p>')};
@@ -644,7 +661,7 @@ document.addEventListener("fullscreenchange",function(){if(!document.fullscreenE
 function leaderName(){try{var T=teamAgg2(WM()).sort(function(a,b){return b.net-a.net});return T.length?T[0].team:null}catch(e){return null}}
 var _lead=null;R.hooks.beforeLive.push(function(){_lead=leaderName()});R.hooks.afterLive.push(function(){var a=leaderName();if(_lead&&a&&_lead!==a)toast("👑 المتصدر اتغير: "+a)});
 function tickDdl(){var el=F.$("#ddl");if(!el)return;if(!S.D||!S.D.nextDeadline){el.hidden=true;return}var ms=S.D.nextDeadline-Date.now();if(ms<=0){el.textContent="ديدلاين ج"+S.D.nextGw+" عدّى";return}var d=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),m=Math.floor(ms%36e5/6e4);el.textContent="⏳ ديدلاين ج"+S.D.nextGw+": "+(d?d+" يوم ":"")+h+" س "+m+" د"}
-setInterval(tickDdl,30000);R.afterRender=function(){tickDdl()};
+setInterval(tickDdl,30000);
 var CM={a:null,b:null};
 function cmp2Sheet(){
   if(!S.D)return;var opts=S.D.members.slice().sort(function(a,b){return a.person.localeCompare(b.person,"ar")});
@@ -665,7 +682,9 @@ R.cmp2=cmp2Sheet;
 R.click=(function(prev){return function(e){
   if(prev&&prev(e))return true;
   var t=e.target;
-  var fv=t.closest("[data-fav]");if(fv){var p=fv.getAttribute("data-fav").split(":"),k=p[0],key=p.slice(1).join(":");if(FAV[k][key])delete FAV[k][key];else FAV[k][key]=1;LS.set("shwayaFav",JSON.stringify(FAV));F.render();return true}
+  var fv=t.closest("[data-fav]");if(fv){var p=fv.getAttribute("data-fav").split(":"),k=p[0],key=p.slice(1).join(":");if(FAV[k][key])delete FAV[k][key];else FAV[k][key]=1;LS.set("shwayaFav",JSON.stringify(FAV));
+    if(S.tab==="plus"){var on=!!FAV[k][key],id=k+":"+key;[].forEach.call(document.querySelectorAll("#view [data-fav]"),function(b){if(b.getAttribute("data-fav")===id){b.classList.toggle("on",on);b.textContent=on?"★":"☆"}});
+      var fe=document.querySelector("#view .pl-favs");if(fe)fe.outerHTML=cardFavs()}else F.render();return true}
   var pl=t.closest("[data-plus]");if(pl){var a=pl.getAttribute("data-plus");if(a==="search")F.openSearch();else if(a==="wi")wiSheet();else if(a==="kiosk")toggleKiosk();else if(a==="cmp2")cmp2Sheet();else if(a==="wa"&&CTX)navigator.clipboard&&navigator.clipboard.writeText(waText(CTX)).then(function(){toast("اتنسخ الملخص - الصقه في الواتساب")});return true}
   if(t.closest("[data-wireset]")){S.WI={};F.derive();wiSheet();F.render();return true}
   var wb=t.closest("[data-wi]");if(wb){var q=wb.getAttribute("data-wi").split(":"),id=Number(q[0]);S.WI[id]=num(pPts(id))+Number(q[1]);F.derive();var top=F.$("#sheet").scrollTop;F.pop();wiSheet();F.$("#sheet").scrollTop=top;F.render();return true}
@@ -674,5 +693,5 @@ R.change=(function(prev){return function(e){if(prev)prev(e);var t=e.target;
   if(t.id==="meSel"){LS.set("shwayaMe",t.value);F.render()}
   if(t.id==="c2a"||t.id==="c2b"){CM[t.id==="c2a"?"a":"b"]=t.value;drawCmp2()}}})(R.change);
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&KI)stopKiosk()});
-window.__plus={cols:{members:memberCols,teams:teamCols,players:playerCols,transfers:transferCols},isFav:isFav,star:star,C:C,teamAgg2:teamAgg2,trGain:trGain,chipUser:chipUser,jac:jac,hMember:hMember,HISTf:function(){return HIST},formOf:formOf,regret:regret,meMember:meMember};
+window.__plus={cols:{members:memberCols,teams:teamCols,players:playerCols,transfers:transferCols},isFav:isFav,star:star,C:C,teamAgg2:teamAgg2,trGain:trGain,chipUser:chipUser,jac:jac,hMember:hMember,HISTf:function(){return HIST},formOf:formOf,regret:regret,meMember:meMember,lz:{box:lzBox,run:lzRun,HT:HT},softRender:softRender};
 })();
