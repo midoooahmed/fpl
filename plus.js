@@ -662,21 +662,37 @@ function leaderName(){try{var T=teamAgg2(WM()).sort(function(a,b){return b.net-a
 var _lead=null;R.hooks.beforeLive.push(function(){_lead=leaderName()});R.hooks.afterLive.push(function(){var a=leaderName();if(_lead&&a&&_lead!==a)toast("👑 المتصدر اتغير: "+a)});
 function tickDdl(){var el=F.$("#ddl");if(!el)return;if(!S.D||!S.D.nextDeadline){el.hidden=true;return}var ms=S.D.nextDeadline-Date.now();if(ms<=0){el.textContent="ديدلاين ج"+S.D.nextGw+" عدّى";return}var d=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),m=Math.floor(ms%36e5/6e4);el.textContent="⏳ ديدلاين ج"+S.D.nextGw+": "+(d?d+" يوم ":"")+h+" س "+m+" د"}
 setInterval(tickDdl,30000);
-var CM={a:null,b:null};
+var CMS=[];try{CMS=JSON.parse(LS.get("shwayaCmps")||"[]")}catch(e){}
+function cmLabels(){
+  var L={},cnt={};S.D.members.forEach(function(m){var k=m.person+" - "+m.team;cnt[k]=(cnt[k]||0)+1});
+  S.D.members.forEach(function(m){var k=m.person+" - "+m.team;L[m.uid]=cnt[k]>1?k+" #"+m.entryId:k});return L}
+function cmFind(txt){
+  txt=(txt||"").trim().toLowerCase();if(!txt)return null;var L=cmLabels(),hit=null,part=[];
+  var byName=[];
+  S.D.members.forEach(function(m){var l=L[m.uid].toLowerCase();if(l===txt)hit=m;else{if(m.person.toLowerCase()===txt)byName.push(m);if(l.indexOf(txt)>-1)part.push(m)}});
+  return hit||(byName.length===1?byName[0]:null)||(part.length===1?part[0]:null)}
 function cmp2Sheet(){
-  if(!S.D)return;var opts=S.D.members.slice().sort(function(a,b){return a.person.localeCompare(b.person,"ar")});
-  var sel=function(id,v){return'<select id="'+id+'" class="sr" style="height:46px"><option value="">اختار عضو...</option>'+opts.map(function(m){return'<option value="'+esc(m.uid)+'"'+(m.uid===v?" selected":"")+">"+esc(m.person)+" - "+esc(m.team)+"</option>"}).join("")+"</select>"};
-  F.push("مقارنة عضوين",sel("c2a",CM.a)+'<div style="height:8px"></div>'+sel("c2b",CM.b)+'<div id="c2o"></div>',"cmp2");drawCmp2()}
-function drawCmp2(){
-  var o=F.$("#c2o");if(!o)return;var a=S.D.members.find(function(m){return m.uid===CM.a}),b=S.D.members.find(function(m){return m.uid===CM.b});
-  if(!a||!b){o.innerHTML='<div class="empty">اختار عضوين</div>';return}
+  if(!S.D)return;var L=cmLabels(),opts=S.D.members.slice().sort(function(a,b){return a.person.localeCompare(b.person,"ar")});
+  var inp=function(id,ph){return'<label class="sr">'+F.ic("search",18)+'<input id="'+id+'" list="c2dl" placeholder="'+ph+'" autocomplete="off"></label>'};
+  F.push("مقارنة عضوين",'<datalist id="c2dl">'+opts.map(function(m){return'<option value="'+esc(L[m.uid])+'"></option>'}).join("")+"</datalist>"+
+    inp("c2a","ابحث عن العضو الأول (اكتب جزء من الاسم أو التيم)")+'<div style="height:8px"></div>'+inp("c2b","ابحث عن العضو التاني")+
+    '<button class="btn b1" data-c2add style="width:100%;margin-top:10px">➕ إضافة المقارنة</button><div class="k" style="margin-top:6px">تقدر تضيف أكتر من مقارنة، وكل واحدة بتتحفظ لحد ما تمسحها وليها كاميرا لوحدها.</div><div id="c2o"></div>',"cmp2");drawCmp2()}
+function cmpCard(a,b,i){
   var A=new Map(a.d.picks.map(function(x){return[x.id,x]})),B=new Map(b.d.picks.map(function(x){return[x.id,x]}));
-  var common=[],oa=[],ob=[];A.forEach(function(x,i){B.has(i)?common.push(i):oa.push(i)});B.forEach(function(x,i){if(!A.has(i))ob.push(i)});
-  var pt=function(ids,src){return sum(ids,function(i){return num(pPts(i))*Math.max(src.get(i).mult,0)})};
+  var common=[],oa=[],ob=[];A.forEach(function(x,id){B.has(id)?common.push(id):oa.push(id)});B.forEach(function(x,id){if(!A.has(id))ob.push(id)});
+  var pt=function(ids,src){return sum(ids,function(id){return num(pPts(id))*Math.max(src.get(id).mult,0)})};
   var row=function(l,x,y,hi){var w=hi===undefined?0:(x>y?1:x<y?-1:0)*(hi?1:-1);return'<div class="row"><b class="grow n '+(w>0?"up":"")+'" style="text-align:center">'+x+'</b><span class="mut" style="flex:1;text-align:center">'+l+'</span><b class="grow n '+(w<0?"up":"")+'" style="text-align:center">'+y+"</b></div>"};
-  var lst=function(ids,src){return ids.map(function(i){var pl=live()&&isPlayed(pStat(i));return'<div class="row act'+(pl?" pl":"")+'" data-act="p" data-arg="'+i+'">'+F.av(i,30)+'<div class="grow"><b>'+esc(P(i).n)+"</b><small>"+(src.get(i).inXI?"أساسي":"دكة")+(src.get(i).mult>=2?" - كابتن":"")+'</small></div><b class="n">'+(live()?num(pPts(i)):"")+"</b></div>"}).join("")||'<p class="mut">-</p>'};
-  o.innerHTML='<div class="cd" style="margin-top:12px">'+row("الصافي",a.d.net,b.d.net,true)+row("النقاط",a.d.points,b.d.points,true)+row("السوالب",a.cost,b.cost,false)+row("نقاط الدكة",a.d.benchPts,b.d.benchPts)+row("لسه هيلعب",a.d.left,b.d.left)+(live()?row("نقاط المختلف",pt(oa,A),pt(ob,B),true):"")+"</div>"+
-   '<div class="sec">عند '+esc(a.person)+" بس ("+oa.length+")</div>"+lst(oa,A)+'<div class="sec">مشتركين ('+common.length+")</div>"+lst(common,A)+'<div class="sec">عند '+esc(b.person)+" بس ("+ob.length+")</div>"+lst(ob,B)+'<div class="lg" style="margin-top:10px"><span><i></i>اللعيب اللي لعب متظلل بالأخضر</span></div>'}
+  var lst=function(ids,src){return ids.map(function(id){var pl=live()&&isPlayed(pStat(id));return'<div class="row act'+(pl?" pl":"")+'" data-act="p" data-arg="'+id+'">'+F.av(id,30)+'<div class="grow"><b>'+esc(P(id).n)+"</b><small>"+(src.get(id).inXI?"أساسي":"دكة")+(src.get(id).mult>=2?" - كابتن":"")+'</small></div><b class="n">'+(live()?num(pPts(id)):"")+"</b></div>"}).join("")||'<p class="mut">-</p>'};
+  var title=esc(a.person)+" ⚔ "+esc(b.person);
+  return F.card("مقارنة "+a.person+" و"+b.person,'<div style="display:flex;align-items:center;gap:8px;padding-inline-end:40px"><b style="flex:1">'+title+'</b><button class="chip" data-c2del="'+i+'">مسح</button></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin:4px 0 6px"><span>'+esc(a.team)+"</span><span>"+esc(b.team)+"</span></div>"+
+    row("الصافي",a.d.net,b.d.net,true)+row("النقاط",a.d.points,b.d.points,true)+row("السوالب",a.cost,b.cost,false)+row("نقاط الدكة",a.d.benchPts,b.d.benchPts)+row("لسه هيلعب",a.d.left,b.d.left)+(live()?row("نقاط المختلف",pt(oa,A),pt(ob,B),true):"")+
+    '<div class="sub-h">عند '+esc(a.person)+" بس ("+oa.length+")</div>"+lst(oa,A)+'<div class="sub-h">مشتركين ('+common.length+")</div>"+lst(common,A)+'<div class="sub-h">عند '+esc(b.person)+" بس ("+ob.length+")</div>"+lst(ob,B)+
+    '<div class="lg" style="margin-top:10px"><span><i></i>اللعيب اللي لعب متظلل بالأخضر</span></div>',"plus")}
+function drawCmp2(){
+  var o=F.$("#c2o");if(!o)return;var by={};S.D.members.forEach(function(m){by[m.entryId]=m});
+  var h=CMS.map(function(c,i){var a=by[c[0]],b=by[c[1]];return a&&b?cmpCard(a,b,i):""}).join("");
+  o.innerHTML=h||'<div class="empty">ابحث عن عضوين واضغط "إضافة المقارنة"</div>'}
 R.cmp2=cmp2Sheet;
 
 R.click=(function(prev){return function(e){
@@ -691,7 +707,20 @@ R.click=(function(prev){return function(e){
   return false}})(R.click);
 R.change=(function(prev){return function(e){if(prev)prev(e);var t=e.target;
   if(t.id==="meSel"){LS.set("shwayaMe",t.value);F.render()}
-  if(t.id==="c2a"||t.id==="c2b"){CM[t.id==="c2a"?"a":"b"]=t.value;drawCmp2()}}})(R.change);
+}})(R.change);
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&KI)stopKiosk()});
+R.click=(function(prev){return function(e){
+  if(prev&&prev(e))return true;var t=e.target,b;
+  if(t.closest("[data-c2add]")){
+    var x=cmFind(F.$("#c2a").value),y=cmFind(F.$("#c2b").value);
+    if(!x||!y){F.toast("اختار العضوين من القايمة (اكتب جزء من الاسم لو لقيت أكتر من واحد)");return true}
+    if(x.entryId===y.entryId){F.toast("اختار عضوين مختلفين");return true}
+    CMS.push([x.entryId,y.entryId]);LS.set("shwayaCmps",JSON.stringify(CMS));F.$("#c2a").value="";F.$("#c2b").value="";drawCmp2();return true}
+  if((b=t.closest("[data-c2del]"))){CMS.splice(Number(b.getAttribute("data-c2del")),1);LS.set("shwayaCmps",JSON.stringify(CMS));drawCmp2();return true}
+  return false}})(R.click);
+/* بيبني الكروت اللي لسه placeholder قبل التصوير (تصوير قسم أو الصفحة كلها) */
+R.flush=function(nodes){
+  var all=[];nodes.forEach(function(n){if(n.matches&&n.matches("[data-lz]"))all.push(n);if(n.querySelectorAll)[].forEach.call(n.querySelectorAll("[data-lz]"),function(x){all.push(x)})});
+  all.forEach(function(n){if(!n.isConnected||!LZ.res)return;var html="";try{html=LZ.res(n.getAttribute("data-lz"))||""}catch(e){console.error(e)}n.insertAdjacentHTML("beforebegin",html);n.remove()})};
 window.__plus={cols:{members:memberCols,teams:teamCols,players:playerCols,transfers:transferCols},isFav:isFav,star:star,C:C,teamAgg2:teamAgg2,trGain:trGain,chipUser:chipUser,jac:jac,hMember:hMember,HISTf:function(){return HIST},formOf:formOf,regret:regret,meMember:meMember,lz:{box:lzBox,run:lzRun,HT:HT},softRender:softRender};
 })();
