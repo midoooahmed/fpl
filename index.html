@@ -401,7 +401,7 @@ function openMember(uid){
 function openTeam(t){
   var R=teamAgg(WM()).find(function(x){return x.team===t});if(!R)return;
   push("تيم "+t,'<div class="hs"><div><b class="n">'+R.net+"</b><small>الصافي</small></div><div><b class=\"n\">"+R.pts+"</b><small>النقاط</small></div><div><b class=\"n\">"+R.cost+"</b><small>السوالب</small></div><div><b class=\"n\">"+R.left+"</b><small>لسه</small></div></div>"+R.ms.slice().sort(function(a,b){return b.d.net-a.d.net}).map(function(m,i){return'<div class="cd act"'+act("m",m.uid)+'><div style="display:flex;align-items:center;gap:12px"><span class="rk n">'+(i+1)+'</span><div style="flex:1"><b>'+esc(m.person)+"</b>"+(m.isCaptain&&m.capMult>1&&S.F.capTeam?' <span class="chip ac">كابتن ×'+m.capMult+"</span>":"")+"</div>"+'<b class="n" style="font-size:20px">'+m.d.net+"</b></div></div>"}).join(""))}
-var DRILL=[["own","عندهم","اللي عنده اللاعب"],["xi","أساسي","اللي لاعبه أساسي"],["cap","كابتن","اللي كبّته"],["buy","اشتروه","اللي اشتراه"],["sell","باعوه","اللي باعه"]];
+var DRILL=[["own","عندهم","اللي عنده اللاعب"],["xi","أساسي","اللي لاعبه أساسي"],["cap","كابتن","اللي كبتنه"],["buy","اشتروه","اللي اشتراه"],["sell","باعوه","اللي باعه"]];
 function drillRows(id,k){var out=[];WM().forEach(function(m){var d=m.d,p=d.picks.find(function(x){return x.id===id}),info=null,role=function(x){return x.mult>=2?(x.mult===3?"تربل كابتن":"كابتن"):"أساسي"};
   if(k==="own"&&p)info=p.inXI?role(p):"دكة";else if(k==="xi"&&p&&p.inXI)info=role(p);else if(k==="cap"&&d.eff&&d.eff.id===id)info=role(d.eff);
   else if(k==="buy"||k==="sell"){var t=m.transfers.filter(function(x){return x[k==="buy"?0:1]===id});if(t.length)info=t.map(function(x){return(k==="buy"?"بدل ":"مكانه ")+P(x[k==="buy"?1:0]).n}).join("، ")}
