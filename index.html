@@ -240,7 +240,7 @@ table.gt{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 </head>
 <body>
 <div id="splash" aria-hidden="true"><div class="sp-w"><i class="sp-ring"></i><i class="sp-ring b"></i><img class="sp-logo" src="logo.png" alt=""></div><div class="sp-t">مركز الفانتازي</div><div class="sp-bar"><i></i></div></div>
-<script>window.__spT0=Date.now();setTimeout(function(){var s=document.getElementById("splash");if(s)s.classList.add("out")},9000)</script>
+<script>window.__spT0=Date.now();setTimeout(function(){var s=document.getElementById("splash");if(s&&!window.__spKeep)s.classList.add("out")},9000)</script>
 <header class="bar"><button class="ib" id="mn" aria-label="القائمة"></button><h1 id="ttl">الملخص</h1><button class="ib" id="sr" aria-label="بحث"></button><button class="ib" id="cp" aria-label="تصوير الصفحة"></button></header>
 <div class="ctx" id="ctx"></div>
 <main id="view"></main>
@@ -610,7 +610,9 @@ window.__fc={R:R,S:S,P:P,pPts:pPts,pStat:pStat,isPlayed:isPlayed,esc:esc,num:num
 <script src="season.js"></script>
 <script src="tables.js"></script>
 <script src="compare.js"></script>
+<script src="welcome.js"></script>
 <script src="captaincy.js"></script>
+<script src="nowroo.js"></script>
 <script src="ui.js"></script>
 </body>
 </html>

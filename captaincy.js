@@ -82,12 +82,25 @@
     return '<div class="cd" style="margin-top:12px"><div class="ct">اكبتن تيمك</div>' +
       (I.locked ? '<div class="cp-msg no" style="margin:0 0 6px">الكبتنة مقفولة حاليًا. هتتفتح لما الأدمن يفتحها للجولة الجاية.</div>' : "") +
       (I.autoFrom > 0 && I.gw >= I.autoFrom ? '<div class="cp-hint" style="margin:0 0 4px">التيم اللي مايكبتنش قبل الديدلاين، كابتنه بيبقى تلقائي أضعف عضو عنده في الجولة.</div>' : "") +
-      '<div class="cp-step"><i>1</i>اختار تيمك</div><input class="cp-in" id="capTeamIn" list="capTeams" placeholder="ابحث عن اسم التيم..." autocomplete="off"><datalist id="capTeams">' +
-      teamsList().map(function (t) { return '<option value="' + esc(t) + '"></option>'; }).join("") + "</datalist>" +
+      '<div class="cp-step"><i>1</i>اختار تيمك</div>' + teamPicker() +
       '<div class="cp-step"><i>2</i>اختار الكابتن</div><div id="capBlocks">' + blocksHtml() + "</div>" +
       '<div class="cp-step"><i>3</i>باسورد التيم</div><div class="cp-pw"><input class="cp-in" id="capPwd" type="' + (ST.show ? "text" : "password") + '" placeholder="اكتب باسورد التيم" autocomplete="off"><button type="button" class="cp-eye" data-capeye aria-label="إظهار أو إخفاء الباسورد">' + eyeSvg(ST.show) + "</button></div>" +
       '<button class="btn b1" id="capSave" data-capsave style="width:100%;margin-top:16px"' + (dis ? " disabled" : "") + ">تأكيد الكبتنة</button>" +
       '<div id="capMsg"></div>' + (I.noPassword ? '<div class="cp-hint">فيه ' + I.noPassword + " تيم لسه ملوش باسورد (الأدمن يضغط إدارة ثم تجهيز الباسوردات).</div>" : "") + "</div>";
+  }
+  /* اختيار التيم: قايمة منسدلة فيها بحث (من welcome.js)، ولو مش موجودة بنرجع للحقل العادي */
+  function teamPicker() {
+    var SD = window.__sdrop;
+    if (!SD) return '<input class="cp-in" id="capTeamIn" list="capTeams" placeholder="ابحث عن اسم التيم..." autocomplete="off"><datalist id="capTeams">' + teamsList().map(function (t) { return '<option value="' + esc(t) + '"></option>'; }).join("") + "</datalist>";
+    return SD.html("capTeam", {
+      ph: "ابحث واختار تيمك...", value: ST.team,
+      options: function () {
+        var seen = {}, L = [];
+        ((ST.info && ST.info.teams) || []).forEach(function (e) { if (!seen[e.team]) { seen[e.team] = 1; L.push({ v: e.team, l: e.team, t: e.group || "" }); } });
+        return L.sort(function (a, b) { return a.l.localeCompare(b.l, "ar"); });
+      },
+      onPick: function (v) { ST.team = v; seedSel(); drawBlocks(); msg("", true); }
+    });
   }
   function blocksHtml() {
     if (!ST.team) return '<p class="mut" style="margin:0">اختار تيمك الأول.</p>';
