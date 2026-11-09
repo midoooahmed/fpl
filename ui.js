@@ -98,6 +98,7 @@
     "#tour{position:fixed;inset:0;z-index:90;display:grid;place-items:end center;padding:16px;background:rgba(4,6,12,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}",
     "#tour .tc{width:min(420px,100%);padding:24px 22px 18px;border-radius:26px;background:var(--s1);border:1px solid var(--ln);box-shadow:0 24px 60px rgba(0,0,0,.4)}",
     "#tour .ti{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;background:var(--ac);color:#0B0F19;margin-bottom:14px}",
+    "#tour .ti.lg{width:96px;height:108px;border-radius:0;background:none}#tour .ti.lg img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 18px rgba(255,150,40,.35))}",
     "#tour h3{margin:0 0 6px;font-size:20px;font-weight:600}#tour p{margin:0;color:var(--mu);line-height:1.7}",
     "#tour .td{display:flex;gap:6px;margin:18px 0 14px}#tour .td i{height:6px;flex:1;border-radius:9px;background:var(--s3)}#tour .td i.on{background:var(--ac)}",
     "#tour .tr{display:flex;gap:10px}#tour .tr button{flex:1}",
@@ -176,6 +177,15 @@
     }).observe(document.body, { childList: true, subtree: true });
   }
 
+  /* ---------- شاشة الدخول: بتفضل لحد ما البيانات تجهز (وحد أدنى ثانية ونص عشان الحركة تتشاف) ---------- */
+  function hideSplash() {
+    var sp = $("#splash"); if (!sp || sp.classList.contains("out") || sp.getAttribute("data-h")) return;
+    sp.setAttribute("data-h", "1");
+    var wait = Math.max(0, 1900 - (Date.now() - (window.__spT0 || Date.now())));
+    setTimeout(function () { sp.classList.add("out"); setTimeout(function () { sp.remove(); }, 900); }, wait);
+  }
+  setTimeout(hideSplash, 5000);
+
   /* ---------- كارت الصدارة في الملخص ---------- */
   function hero() {
     var v = $("#view");
@@ -209,14 +219,15 @@
     brush: '<path d="M18 3l3 3-9 9-3-3zM9 15c-3 0-4 2-4 4 0 1-1 2-2 2 4 1 9 0 9-5"/>',
     help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/>',
     wa: '<path d="M4 20l1.3-4A8 8 0 1 1 8 18.8z"/>',
-    wi: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/>'
+    wi: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/>',
+    star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.200 9.500l6.100-.9z"/>'
   };
   function svg(n, s) { return '<svg width="' + (s || 22) + '" height="' + (s || 22) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[n] + "</svg>"; }
   var META = {
     overview: ["grid", "الصورة الكاملة للجولة"], members: ["users", "ترتيب كل واحد وتفاصيله"], teams: ["shield", "الفرق ونقاطها"], players: ["ball", "اللاعيبة ومين اشتراهم"],
-    transfers: ["swap", "مين اشترى ومين باع"], plus: ["chart", "تحليلات وتشكيلات وجوايز"], season_t: ["cal", "الموسم كله للتيمات"], season_m: ["cal", "الموسم كله لكل عضو"], cmp: ["vs", "قارن فريقين لايف"]
+    transfers: ["swap", "مين اشترى ومين باع"], plus: ["chart", "تحليلات وتشكيلات وجوايز"], season_t: ["cal", "الموسم كله للتيمات"], captain: ["star", "كل تيم يختار كابتن الجولة"], season_m: ["cal", "الموسم كله لكل عضو"], cmp: ["vs", "قارن فريقين لايف"]
   };
-  var GROUPS = [["الأساسيات", ["overview", "members", "teams", "players", "transfers"]], ["التحليلات والموسم", ["plus", "season_t", "season_m"]]];
+  var GROUPS = [["الأساسيات", ["overview", "members", "teams", "players", "transfers"]], ["الكبتنة", ["captain"]], ["التحليلات والموسم", ["plus", "season_t", "season_m"]]];
   function lbl(b) {
     var w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT, null), n;
     while ((n = w.nextNode())) { var t = n.textContent.trim(); if (t) return t; }
@@ -280,7 +291,7 @@
   var ti = 0;
   function tourHtml() {
     var s = STEPS[ti], last = ti === STEPS.length - 1;
-    return '<div class="tc fc-pop"><div class="ti">' + svg(s[0], 30) + "</div><h3>" + s[1] + "</h3><p>" + s[2] + '</p><div class="td">' + STEPS.map(function (x, i) { return '<i class="' + (i <= ti ? "on" : "") + '"></i>'; }).join("") +
+    return '<div class="tc fc-pop"><div class="ti' + (ti === 0 ? " lg" : "") + '">' + (ti === 0 ? '<img src="logo.png" alt="">' : svg(s[0], 30)) + "</div><h3>" + s[1] + "</h3><p>" + s[2] + '</p><div class="td">' + STEPS.map(function (x, i) { return '<i class="' + (i <= ti ? "on" : "") + '"></i>'; }).join("") +
       '</div><div class="tr"><button class="btn b2" data-tour="skip">' + (last ? "إغلاق" : "تخطي") + '</button><button class="btn b1" data-tour="next">' + (last ? "يلا نبدأ" : "التالي") + "</button></div></div>";
   }
   function startTour() { ti = 0; var d = $("#tour"); if (!d) { d = document.createElement("div"); d.id = "tour"; document.body.appendChild(d); } d.innerHTML = tourHtml(); }
@@ -319,6 +330,9 @@
     if (_ra) _ra();
     var ns = $("#drawer .ns");
     if (ns && !$("#skn")) ns.insertAdjacentHTML("beforeend", '<button class="tl" id="skn">' + svg("brush", 20) + ' الشكل (نيون، ذهبي، غروب...)</button><button class="tl" id="tourb">' + svg("help", 20) + " جولة سريعة في التطبيق</button>");
+    var dr = $("#drawer");
+    if (dr && !dr.querySelector(".fc-brand")) dr.insertAdjacentHTML("afterbegin", '<div class="fc-brand"><img src="logo.png" alt=""><div><b>Game Of Fantasy</b><small>مركز الفانتازي</small></div></div>');
+    if (S.D) hideSplash();
     hero();
     enter();
     if (S.D && !LS.get("fc_tour") && !$("#tour")) setTimeout(function () { if (!LS.get("fc_tour") && !$("#tour")) startTour(); }, 900);

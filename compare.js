@@ -6,8 +6,15 @@ var WD=["الأحد","الاثنين","الثلاثاء","الأربعاء","ا�
 var ENC=encodeURIComponent,DEC=decodeURIComponent;
 var C={mode:"t",teams:null,loading:false,t1:"",t2:"",RS:null,tab:"c",q:"",rem:false,lv:false,pos:"",shown:false,prep:null,busy:false,mq:"",mf:0,WI:null};
 var SH={},cap={1:{},2:{}},ct=1;
-var PG={list:[{id:1,name:"",t1:"",t2:"",mode:"t",snap:null}],act:1,n:1};
-try{var sv=JSON.parse(LS.get("fc_cmp2")||"null");if(sv&&sv.list&&sv.list.length){PG.list=sv.list.map(function(p){return{id:p.id,name:p.name||"",t1:p.t1||"",t2:p.t2||"",mode:p.mode==="m"?"m":"t",snap:null}});PG.n=sv.n||PG.list.length;PG.act=PG.list.some(function(p){return p.id===sv.act})?sv.act:PG.list[0].id}}catch(e){}
+/* مقارنات التيمات ومقارنات الأعضاء كل واحدة في قايمة صفحات منفصلة، وكلها بتتحفظ في الجهاز (حتى لو قفلت التطبيق) */
+var PGS={t:{list:[{id:1,name:"",t1:"",t2:"",snap:null}],act:1,n:1},m:{list:[{id:1,name:"",t1:"",t2:"",snap:null}],act:1,n:1}},PG=PGS.t;
+function loadPG(g,o){if(!o||!o.list||!o.list.length)return;g.list=o.list.map(function(p){return{id:p.id,name:p.name||"",t1:p.t1||"",t2:p.t2||"",snap:null}});g.n=o.n||g.list.length;g.act=g.list.some(function(p){return p.id===o.act})?o.act:g.list[0].id}
+try{
+  var sv3=JSON.parse(LS.get("fc_cmp3")||"null");
+  if(sv3){loadPG(PGS.t,sv3.t);loadPG(PGS.m,sv3.m);C.mode=sv3.mode==="m"?"m":"t"}
+  else{var sv2=JSON.parse(LS.get("fc_cmp2")||"null");if(sv2&&sv2.list){loadPG(PGS.t,{act:sv2.act,n:sv2.n,list:sv2.list.filter(function(p){return p.mode!=="m"})});loadPG(PGS.m,{act:sv2.act,n:sv2.n,list:sv2.list.filter(function(p){return p.mode==="m"})})}}
+}catch(e){}
+PG=PGS[C.mode];
 function cur(){return PG.list.filter(function(p){return p.id===PG.act})[0]}
 /* ---------- مقارنة الأعضاء: نفس المحرك والشكل، لكن كل طرف عضو واحد بدل تيم ---------- */
 var MEM={},POSN={GKP:1,DEF:2,MID:3,FWD:4};
@@ -53,10 +60,13 @@ function memberR(){
     team1RawPlayers:A.raw,team2RawPlayers:B.raw,team1Details:det(a),team2Details:det(b)}}
 function modeHtml(){return'<div class="tbar" style="margin:10px 0 0"><div class="sg"><button data-cmode="t" class="'+(C.mode==="t"?"on":"")+'">مقارنة تيمات</button><button data-cmode="m" class="'+(C.mode==="m"?"on":"")+'">مقارنة أعضاء</button></div></div>'}
 
-function savePG(){var c=cur();if(c){c.t1=C.t1;c.t2=C.t2;c.mode=C.mode}LS.set("fc_cmp2",JSON.stringify({act:PG.act,n:PG.n,list:PG.list.map(function(p){return{id:p.id,name:p.name,t1:p.t1,t2:p.t2,mode:p.mode==="m"?"m":"t"}})}))}
-var FIELDS=["mode","t1","t2","RS","tab","q","rem","lv","pos","shown","WI","mq","mf"];
+function serPG(g){return{act:g.act,n:g.n,list:g.list.map(function(p){return{id:p.id,name:p.name,t1:p.t1,t2:p.t2}})}}
+function savePG(){var c=cur();if(c){c.t1=C.t1;c.t2=C.t2}LS.set("fc_cmp3",JSON.stringify({mode:C.mode,t:serPG(PGS.t),m:serPG(PGS.m)}))}
+/* تبديل بين تيمات/أعضاء: بنحفظ الحالة الحالية (بنتيجتها) ونفتح آخر صفحة كانت مفتوحة في الوضع التاني */
+function setMode(nm){if(nm===C.mode)return;snap(cur());savePG();C.mode=nm;PG=PGS[nm];restore(cur());C.t1=cur().t1;C.t2=cur().t2;C.prep=null;savePG()}
+var FIELDS=["t1","t2","RS","tab","q","rem","lv","pos","shown","WI","mq","mf"];
 function snap(p){var o={};FIELDS.forEach(function(k){o[k]=C[k]});p.snap=o}
-function restore(p){var o=p.snap||{mode:p.mode==="m"?"m":"t",t1:p.t1,t2:p.t2,RS:null,tab:"c",q:"",rem:false,lv:false,pos:"",shown:false,WI:null,mq:"",mf:0};FIELDS.forEach(function(k){C[k]=o[k]!==undefined?o[k]:C[k]})}
+function restore(p){var o=p.snap||{t1:p.t1,t2:p.t2,RS:null,tab:"c",q:"",rem:false,lv:false,pos:"",shown:false,WI:null,mq:"",mf:0};FIELDS.forEach(function(k){C[k]=o[k]!==undefined?o[k]:C[k]})}
 restore(cur());C.t1=cur().t1;C.t2=cur().t2;
 R.main.push({id:"cmp",name:"المقارنة",sub:"قارن تيمين أو عضوين - جوا التطبيق",icon:"swap"});
 var _title=R.title;R.title=function(t){return t==="cmp"?"المقارنة":(_title?_title(t):null)};R.noCtx=function(t){return t==="cmp"};
@@ -209,10 +219,10 @@ function weapons(){
 R.click=(function(prev){return function(e){
   if(prev&&prev(e))return true;var t=e.target,m;
   if((m=t.closest("[data-cpg]"))&&!t.closest("[data-cpe]")&&!t.closest("[data-cpx]")){var id=Number(m.getAttribute("data-cpg"));if(id!==PG.act){snap(cur());PG.act=id;restore(cur());savePG();F.render()}return true}
-  if(t.closest("[data-cpadd]")){if(PG.list.length>=15){toast("أقصى عدد للصفحات 15");return true}snap(cur());var np={id:++PG.n,name:"",t1:"",t2:"",mode:C.mode,snap:null};PG.list.push(np);PG.act=np.id;restore(np);C.t1="";C.t2="";C.RS=null;savePG();F.render();return true}
+  if(t.closest("[data-cpadd]")){if(PG.list.length>=15){toast("أقصى عدد للصفحات 15");return true}snap(cur());var np={id:++PG.n,name:"",t1:"",t2:"",snap:null};PG.list.push(np);PG.act=np.id;restore(np);C.t1="";C.t2="";C.RS=null;savePG();F.render();return true}
   if((m=t.closest("[data-cpx]"))){var xid=Number(m.getAttribute("data-cpx")),pg=PG.list.filter(function(p){return p.id===xid})[0];if(!pg||PG.list.length<=1)return true;if((pg.t1||pg.t2)&&!confirm("تقفل صفحة المقارنة دي؟"))return true;var i=PG.list.indexOf(pg),was=xid===PG.act;PG.list.splice(i,1);if(was){var nx=PG.list[Math.min(i,PG.list.length-1)];PG.act=nx.id;restore(nx)}savePG();F.render();return true}
   if((m=t.closest("[data-cpe]"))){var eid=Number(m.getAttribute("data-cpe")),pe=PG.list.filter(function(p){return p.id===eid})[0],v=prompt("اكتب اسم قصير للمقارنة دي (سيبه فاضي عشان يرجع للاسم التلقائي):",pe.name||"");if(v!==null&&pe){pe.name=v.trim().slice(0,30);savePG();F.render()}return true}
-  if((m=t.closest("[data-cmode]"))){var nmd=m.getAttribute("data-cmode");if(nmd!==C.mode){C.mode=nmd;C.t1="";C.t2="";C.RS=null;C.prep=null;C.WI=null;C.shown=false;savePG();F.render()}return true}
+  if((m=t.closest("[data-cmode]"))){var nmd=m.getAttribute("data-cmode");setMode(nmd);F.render();return true}
   if((m=t.closest("[data-cpk]"))){var slot=Number(m.getAttribute("data-cpk")),L=LIST();F.push(C.mode==="m"?(slot===1?"العضو الأول":"العضو التاني"):(slot===1?"الفريق الأول":"الفريق الثاني"),'<label class="sr">'+F.ic("search",18)+'<input id="c1q" placeholder="🔍 اكتب للبحث..."></label>'+(L.map(function(n){return'<div class="opt" data-cpick="'+slot+":"+ENC(n)+'"><b>'+esc(n)+"</b></div>"}).join("")||'<div class="empty">'+(C.mode==="m"?"مفيش أعضاء (حمّل الجولة)":"مفيش تيمات")+'</div>'),"cpick");return true}
   if((m=t.closest("[data-cpick]"))){var p=m.getAttribute("data-cpick").split(":");if(p[0]==="1")C.t1=DEC(p[1]);else C.t2=DEC(p[1]);savePG();F.pop();F.render();return true}
   if(t.closest("[data-cstart]")){start();return true}
@@ -241,5 +251,16 @@ R.click=(function(prev){return function(e){
   if(t.closest("[data-cwx]")){C.WI.rows.forEach(function(r){var v=Math.max(-10,Math.min(40,Math.round(r.points+r.xp)));if(v!==r.points)C.WI.preds[r.key]=v;else delete C.WI.preds[r.key]});C.WI.applied=wiCalc();F.render();return true}
   return false}})(R.click);
 /* زرار "مقارنة عضوين" في كل التطبيق بيفتح نفس شاشة المقارنة في وضع الأعضاء */
-R.cmp2=function(){if(C.mode!=="m"){C.mode="m";C.t1="";C.t2="";C.RS=null;C.prep=null;C.WI=null;C.shown=false;savePG()}F.setTab("cmp")};
+R.cmp2=function(){setMode("m");F.setTab("cmp")};
+
+/* لما تفتح المقارنة وفيها عضوين/تيمين محفوظين من قبل، بنعيد التحليل لوحدنا عشان تلاقيها قدامك بأحدث نقاط */
+var TRIED={};
+function autoRun(){
+  if(C.busy||C.RS||!C.t1||!C.t2||C.t1===C.t2||!S.D)return;
+  var key=C.mode+"|"+C.t1+"|"+C.t2+"|"+S.gw;
+  if(TRIED[key])return;
+  if(C.mode==="m"){memLabels();if(!MEM[C.t1]||!MEM[C.t2]||!S.D.live)return;TRIED[key]=1;run(false);return}
+  TRIED[key]=1;C.busy=true;F.render();
+  F.api({api:"prep",t1:C.t1,t2:C.t2}).then(function(p){C.busy=false;if(!p||p.error){F.render();return}C.prep=p;if(p.team1.needsCaptain||p.team2.needsCaptain){F.render();return}run(false)}).catch(function(){C.busy=false;F.render()})}
+var _raC=R.afterRender;R.afterRender=function(){if(_raC)_raC();if(S.tab==="cmp")autoRun()};
 })();
