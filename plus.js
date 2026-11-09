@@ -701,7 +701,7 @@ R.click=(function(prev){return function(e){
   var fv=t.closest("[data-fav]");if(fv){var p=fv.getAttribute("data-fav").split(":"),k=p[0],key=p.slice(1).join(":");if(FAV[k][key])delete FAV[k][key];else FAV[k][key]=1;LS.set("shwayaFav",JSON.stringify(FAV));
     if(S.tab==="plus"){var on=!!FAV[k][key],id=k+":"+key;[].forEach.call(document.querySelectorAll("#view [data-fav]"),function(b){if(b.getAttribute("data-fav")===id){b.classList.toggle("on",on);b.textContent=on?"★":"☆"}});
       var fe=document.querySelector("#view .pl-favs");if(fe)fe.outerHTML=cardFavs()}else F.render();return true}
-  var pl=t.closest("[data-plus]");if(pl){var a=pl.getAttribute("data-plus");if(a==="search")F.openSearch();else if(a==="wi")wiSheet();else if(a==="kiosk")toggleKiosk();else if(a==="cmp2")cmp2Sheet();else if(a==="wa"&&CTX)navigator.clipboard&&navigator.clipboard.writeText(waText(CTX)).then(function(){toast("اتنسخ الملخص - الصقه في الواتساب")});return true}
+  var pl=t.closest("[data-plus]");if(pl){var a=pl.getAttribute("data-plus");if(a==="search")F.openSearch();else if(a==="wi")wiSheet();else if(a==="kiosk")toggleKiosk();else if(a==="cmp2"){if(R.cmp2&&R.cmp2!==cmp2Sheet)R.cmp2();else cmp2Sheet()}else if(a==="wa"&&CTX)navigator.clipboard&&navigator.clipboard.writeText(waText(CTX)).then(function(){toast("اتنسخ الملخص - الصقه في الواتساب")});return true}
   if(t.closest("[data-wireset]")){S.WI={};F.derive();wiSheet();F.render();return true}
   var wb=t.closest("[data-wi]");if(wb){var q=wb.getAttribute("data-wi").split(":"),id=Number(q[0]);S.WI[id]=num(pPts(id))+Number(q[1]);F.derive();var top=F.$("#sheet").scrollTop;F.pop();wiSheet();F.$("#sheet").scrollTop=top;F.render();return true}
   return false}})(R.click);
