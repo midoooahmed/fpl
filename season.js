@@ -47,12 +47,30 @@
     });
   }
 
+  /* ---------- كباتن التيمات لكل جولة (Captain.gs) ---------- */
+  var CAPS = null, CAPV = 0, CAPREQ = 0, AUTOFROM = 0, AUTOMAP = {};
+  function loadCaps() {
+    if (CAPREQ) return; CAPREQ = 1;
+    F.api({ api: "capHistory" }).then(function (r) {
+      if (r && r.success) { CAPS = r.caps || {}; AUTOFROM = Number(r.autoFrom) || 0; CAPV++; MC.sig = ""; if (S.tab === "season_t" || S.tab === "season_m") F.render(); }
+    }).catch(function () {});
+  }
+  R.hooks.afterLoad.push(function () { CAPREQ = 0; });
+  /* الكابتن اللي التيم اختاره في الجولة دي، ولو ماكبتنش بنرجع للعلامة اليدوية */
+  function isCapAt(m, g) {
+    var P = CAPS && CAPS[g], key = m.team + "|" + m.contest;
+    if (P && P[key] !== undefined) return String(P[key]) === String(m.entryId);
+    /* مفيش اختيار: الكابتن التلقائي (أضعف عضو في الجولة) لو شغال من الجولة دي */
+    if (AUTOFROM > 0 && g >= AUTOFROM && m.capMult > 1) return !!(AUTOMAP[g] && AUTOMAP[g][key] === String(m.entryId));
+    return m.manualCap !== undefined ? !!m.manualCap : !!m.isCaptain;
+  }
+
   /* ---------- الموديل ---------- */
   var MC = { d: null, sig: "", m: null };
   function sigOf(wm, H) {
     var h = 0, u = wm.map(function (m) { return m.uid; }).join(",");
     for (var i = 0; i < u.length; i++) h = (h * 31 + u.charCodeAt(i)) | 0;
-    return [S.gw, S.D.live ? S.D.live.updatedAt : 0, S.F.capTeam ? 1 : 0, wm.length, h, Object.keys(H).length].join("|");
+    return [S.gw, S.D.live ? S.D.live.updatedAt : 0, S.F.capTeam ? 1 : 0, wm.length, h, Object.keys(H).length, CAPV, AUTOFROM].join("|");
   }
   function model() {
     var H = hist(); if (!H) return null;
@@ -99,13 +117,31 @@
       return X;
     });
 
+    AUTOMAP = {};
+    if (AUTOFROM > 0) {
+      var grp = {};
+      MR.forEach(function (X) { if (X.m.capMult > 1) { var gk = X.m.team + "|" + X.m.contest; (grp[gk] = grp[gk] || []).push(X); } });
+      gws.forEach(function (gg, j) {
+        if (gg < AUTOFROM) return;
+        Object.keys(grp).forEach(function (gk) {
+          var P = CAPS && CAPS[gg]; if (P && P[gk] !== undefined) return;
+          var low = null;
+          grp[gk].forEach(function (X) {
+            var e = X.ser[j]; if (!e) return;
+            if (!low || e.net < low.e.net || (e.net === low.e.net && String(X.m.entryId) < String(low.X.m.entryId))) low = { X: X, e: e };
+          });
+          if (low) (AUTOMAP[gg] = AUTOMAP[gg] || {})[gk] = String(low.X.m.entryId);
+        });
+      });
+    }
     var T = {};
     MR.forEach(function (X) {
-      var m = X.m, k = capTeam && m.isCaptain ? (m.capMult || 1) : 1;
+      var m = X.m;
       var t = T[m.team] || (T[m.team] = { team: m.team, n: 0, per: gws.map(function () { return null; }), pts: 0, hits: 0, bench: 0, benchN: 0, ntr: 0, chips: 0, mg: 0 });
       t.n++;
       X.ser.forEach(function (e, j) {
         if (!e) return;
+        var k = capTeam && isCapAt(m, gws[j]) ? (m.capMult || 1) : 1;
         t.per[j] = (t.per[j] || 0) + e.net * k; t.pts += e.pts * k; t.hits += e.cost * k; t.mg++;
         if (e.bench != null) { t.bench += e.bench; t.benchN++; }
         if (e.ntr != null) t.ntr += e.ntr;
@@ -420,6 +456,7 @@
   }
   function view(tab) {
     if (!S.D) return '<div class="empty">بيحمّل...</div>';
+    loadCaps();
     if (!WM().length) return '<div class="empty">مفيش أعضاء. غيّر الفلاتر أو حمّل الجولة.</div>';
     var M = model();
     if (!M) return '<div class="empty">بيحمّل سجل الجولات...</div>';
