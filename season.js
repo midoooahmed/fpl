@@ -183,6 +183,15 @@
     return M;
   }
 
+  /* للبطولات (tournaments.js): نفس الموديل بس من غير فلاتر التطبيق (مجموعة/مسابقة/بحث) عشان البطولة تحسب كل التيمات */
+  window.__season = {
+    full: function () {
+      var f = S.F, g = f.groups, c = f.contests, q = f.q;
+      f.groups = []; f.contests = []; f.q = "";
+      try { return model(); } finally { f.groups = g; f.contests = c; f.q = q; }
+    }
+  };
+
   /* ---------- كروت التيمات ---------- */
   function noteHtml(M) {
     return '<div class="sm-note" style="margin:6px 2px 0">الأرقام محسوبة على <b>' + M.gws.length + "</b> " + (M.gws.length === 1 ? "جولة" : "جولات") +

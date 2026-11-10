@@ -8,6 +8,12 @@
   var ROOT = document.createElement("div"); ROOT.id = "capRoot";
   var ST = { info: null, err: "", loading: false, team: "", sel: {}, pwd: "", show: false, grp: "__all", sk: "team", sd: 1, admin: "", busy: false, off: 0, armed: false };
   var wasCap = false, tmr = 0;
+  /* أعمدة لوحة الكباتن: تشيك بوكس لكل عمود، واختيارك بيتحفظ في الجهاز */
+  var COLS = [{ k: "team", l: "التيم" }, { k: "contest", l: "المسابقة" }, { k: "cap", l: "الكابتن" }, { k: "time", l: "التوقيت" }];
+  var CV = { team: 1, contest: 1, cap: 1, time: 1 };
+  try { var _cv = JSON.parse(localStorage.getItem("fc_capcols") || "null"); if (_cv) COLS.forEach(function (c) { if (_cv[c.k] != null) CV[c.k] = _cv[c.k] ? 1 : 0; }); } catch (e) {}
+  function saveCols() { try { localStorage.setItem("fc_capcols", JSON.stringify(CV)); } catch (e) {} }
+  function when(ts, fallback) { return (F.when && ts ? F.when(ts) : "") || fallback || ""; }
 
   (function () {
     var st = document.createElement("style"); st.id = "capCss";
@@ -42,6 +48,10 @@
       "#capRoot .cp-tab.on{background:var(--ac);border-color:var(--ac);color:#0B0F19;font-weight:600}" +
       "#capRoot .cp-tb th{cursor:pointer;white-space:nowrap}#capRoot .cp-tb td.cp-c{font-weight:600;color:var(--act)}" +
       "#capRoot .cp-hint{font-size:12px;color:var(--mu);margin-top:8px}" +
+      "#capRoot .cp-cols{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 2px 0;font-size:13px;color:var(--mu)}" +
+      "#capRoot .cp-ck{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:99px;border:1.5px solid var(--ln);background:var(--s1);color:var(--tx);font-size:13px;font-weight:500;cursor:pointer;user-select:none}" +
+      "#capRoot .cp-ck input{width:17px;height:17px;margin:0;accent-color:var(--ac);cursor:pointer}" +
+      "#capRoot .cp-ck:has(input:checked){border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,var(--s1))}" +
       "#capAdm{position:fixed;inset:0;z-index:95;display:grid;place-items:center;padding:20px;background:rgba(4,6,12,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}" +
       "#capAdm .tc{width:min(360px,100%);padding:22px;border-radius:24px;background:var(--s1);border:1px solid var(--ln);box-shadow:0 24px 60px rgba(0,0,0,.4)}" +
       "#capAdm h3{margin:0 0 12px;font-size:18px;font-weight:600}#capAdm .cp-in{margin-bottom:10px}" +
@@ -109,7 +119,7 @@
     return els.map(function (e) {
       var saved = P[e.team + "|" + e.contest], cur = ST.sel[e.contest];
       return '<div class="cp-blk"><div class="cp-bh"><b>' + esc(e.contest || "المسابقة") + '</b><span class="cp-chip ac">' + esc(e.capType) + " ×" + e.capMult + "</span></div>" +
-        (saved ? '<div class="cp-note">الكابتن الحالي: <b>' + esc(saved.person) + "</b> · " + esc(saved.time) + "</div>" : '<div class="cp-note">لسه ماكبتنتش في المسابقة دي.</div>') +
+        (saved ? '<div class="cp-note">الكابتن الحالي: <b>' + esc(saved.person) + "</b> · " + esc(when(saved.ts, saved.time)) + "</div>" : '<div class="cp-note">لسه ماكبتنتش في المسابقة دي.</div>') +
         '<div class="cp-mem">' + e.members.map(function (m) {
           return '<button type="button" class="cp-m' + (cur === m.entryId ? " on" : "") + '" data-capc="' + esc(e.contest) + '" data-cape="' + esc(m.entryId) + '">' + esc(m.person) + "</button>";
         }).join("") + "</div></div>";
@@ -136,13 +146,23 @@
       return String(x).localeCompare(String(y), "ar") * ST.sd;
     });
     var arr = function (k) { return ST.sk === k ? (ST.sd > 0 ? " ▲" : " ▼") : ""; };
+    var vis = COLS.filter(function (c) { return CV[c.k]; });
+    var cell = {
+      team: function (r) { return "<td><b>" + esc(r.team) + "</b></td>"; },
+      contest: function (r) { return "<td>" + esc(r.contest) + "</td>"; },
+      cap: function (r) { return '<td class="cp-c">' + (r.cap ? esc(r.cap) : '<span class="mut">–</span>') + "</td>"; },
+      time: function (r) { return "<td>" + (r.ts ? esc(when(r.ts, r.time)) : '<span class="mut">–</span>') + "</td>"; }
+    };
     var body = L.map(function (r, i) {
-      return "<tr><td>" + (i + 1) + "</td><td><b>" + esc(r.team) + "</b></td><td>" + esc(r.contest) + '</td><td class="cp-c">' + (r.cap ? esc(r.cap) : '<span class="mut">–</span>') + "</td><td>" + (r.time ? esc(r.time) : '<span class="mut">–</span>') + "</td></tr>";
+      return "<tr><td>" + (i + 1) + "</td>" + vis.map(function (c) { return cell[c.k](r); }).join("") + "</tr>";
     }).join("");
-    return F.card("كباتن الجولة " + ST.info.gw,
+    var colsBar = '<div class="cp-cols"><span>الأعمدة:</span>' + COLS.map(function (c) {
+      return '<label class="cp-ck"><input type="checkbox" data-capcol="' + c.k + '"' + (CV[c.k] ? " checked" : "") + "><span>" + c.l + "</span></label>";
+    }).join("") + "</div>";
+    return colsBar + F.card("كباتن الجولة " + ST.info.gw,
       '<div class="ct">لوحة الكباتن - الجولة ' + (ST.info.gw || "–") + '</div><div class="cp-tabs">' + tabs + "</div>" +
-      '<div class="tbl-sc"><table class="mini-t cp-tb"><thead><tr><th>#</th><th data-caps="team">التيم' + arr("team") + '</th><th data-caps="contest">المسابقة' + arr("contest") + '</th><th data-caps="cap">الكابتن' + arr("cap") + '</th><th data-caps="ts">الوقت' + arr("ts") + "</th></tr></thead><tbody>" +
-      (body || '<tr><td colspan="5" class="mut">مفيش نتايج</td></tr>') + "</tbody></table></div>", "plus ov-full");
+      '<div class="tbl-sc"><table class="mini-t cp-tb"><thead><tr><th>#</th>' + vis.map(function (c) { var sk = c.k === "time" ? "ts" : c.k; return '<th data-caps="' + sk + '">' + c.l + arr(sk) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      (body || '<tr><td colspan="' + (vis.length + 1) + '" class="mut">مفيش نتايج</td></tr>') + "</tbody></table></div>", "plus ov-full");
   }
   function draw() {
     if (ST.err) { ROOT.innerHTML = '<div class="empty">' + esc(ST.err) + '<br><button class="btn b2" data-capact="retry" style="margin-top:12px">حاول تاني</button></div>'; return; }
@@ -273,6 +293,13 @@
     if (t.closest("[data-capeye]")) { ST.show = !ST.show; var pw = q("#capPwd"); if (pw) pw.type = ST.show ? "text" : "password"; var ey = t.closest("[data-capeye]"); ey.innerHTML = eyeSvg(ST.show); return; }
     if (t.closest("[data-capsave]")) { save(); return; }
     if ((b = t.closest("[data-capact]"))) { var a = b.getAttribute("data-capact"); if (a === "admin") adminOpen(); else if (a === "retry") { ST.err = ""; ST.info = null; load(); } return; }
+  });
+  ROOT.addEventListener("change", function (e) {
+    var t = e.target, k = t.getAttribute && t.getAttribute("data-capcol");
+    if (!k) return;
+    var left = COLS.filter(function (c) { return c.k !== k && CV[c.k]; }).length;
+    if (!t.checked && !left) { t.checked = true; F.toast("لازم يفضل عمود واحد على الأقل ظاهر"); return; }
+    CV[k] = t.checked ? 1 : 0; saveCols(); drawBoard();
   });
   ROOT.addEventListener("input", function (e) {
     var t = e.target;

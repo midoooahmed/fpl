@@ -14,6 +14,23 @@
   var RM = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
   window.__fcGate = true; window.__spKeep = true; /* بيمنع الإخفاء التلقائي لشاشة الدخول لحد ما الزرار يتداس */
 
+  /* وقت مبسّط: اليوم + التاريخ + الساعة (من غير ثواني) - بيتستخدم في الكبتنة واللي نوّروا */
+  var DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+  F.when = function (ts) {
+    ts = Number(ts); if (!ts) return "";
+    var d = new Date(ts), h = d.getHours(), m = d.getMinutes(), p = h >= 12 ? "م" : "ص";
+    h = h % 12; if (h === 0) h = 12;
+    return DAYS[d.getDay()] + " " + d.getDate() + "-" + (d.getMonth() + 1) + "-" + d.getFullYear() + " " + h + ":" + (m < 10 ? "0" : "") + m + " " + p;
+  };
+  /* مدة بالثواني -> "3 س 12 د" */
+  F.dur = function (sec) {
+    sec = Math.round(Number(sec) || 0); if (sec <= 0) return "–";
+    var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
+    if (h) return h + " س" + (m ? " " + m + " د" : "");
+    if (m) return m + " د";
+    return sec + " ث";
+  };
+
   function nz(s) { return String(s || "").toLowerCase().replace(/[\u064B-\u0652\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").trim(); }
   function ar(a, b) { return a.localeCompare(b, "ar"); }
 
@@ -212,7 +229,7 @@
     var res = null, entered = false;
     visit(p).then(function (r) { res = r; if (entered) say(r); });
     function say(r) {
-      if (r && r.success) F.toast(r.counted ? "نوّرت يا " + (r.person || p.person) + " - دي دخولتك رقم " + r.count : "نوّرت يا " + (r.person || p.person) + " (اتسجلت دخولتك قبل شوية)");
+      if (r && r.success) F.toast(r.counted ? "نوّرت يا " + (r.person || p.person) + " - دي دخولتك رقم " + r.count : "نوّرت يا " + (r.person || p.person) + " (لسه في نفس الزيارة - الدخولة الجديدة بتتحسب بعد ربع ساعة)");
     }
     setTimeout(function () { enter(function () { entered = true; if (res) say(res); }); }, RM ? 150 : 1000);
   }
@@ -306,4 +323,35 @@
     var pend = 0;
     new MutationObserver(function () { if (pend) return; pend = setTimeout(function () { pend = 0; mark(); }, 120); }).observe(document.body, { childList: true, subtree: true });
   }
+
+  /* =====================================================================
+     عدّاد مدة الاستخدام: بيعدّ الثواني طول ما التطبيق مفتوح قدامك (وبيقف لو في الخلفية أو الشاشة مقفولة)
+     وبيبعتها للسيرفر (Visits.gs - ping) كل شوية وعند الخروج. مفيش عدّ لو دخلت كزائر (من غير بروفايل).
+     ===================================================================== */
+  var TK = { acc: Number(LS.get("fc_tsec")) || 0, t: Date.now(), sinceSave: 0, sinceSend: 0, busy: false };
+  function tkOk() { var p = getP(); return !!(p && p.team && p.entryId); }
+  function tkSave() { LS.set("fc_tsec", String(Math.round(TK.acc))); }
+  function tkSend(keep) {
+    var p = getP(); if (!p || !p.team || !p.entryId || !F.CFG || !F.CFG.API) return;
+    var n = Math.round(TK.acc); if (n < 5 || TK.busy) return;
+    var sent = Math.min(n, 600);
+    TK.busy = true;
+    var url = F.CFG.API + "?" + new URLSearchParams({ api: "ping", team: p.team, entryId: p.entryId, secs: sent });
+    fetch(url, { keepalive: !!keep }).then(function (r) { return r.json(); }).then(function (r) {
+      TK.busy = false;
+      if (r && r.success) { TK.acc = Math.max(0, TK.acc - sent); tkSave(); }
+    }).catch(function () { TK.busy = false; });
+  }
+  setInterval(function () {
+    var now = Date.now(), dt = Math.min(3, (now - TK.t) / 1000); TK.t = now;
+    if (document.hidden || window.__fcGate || !tkOk()) return;
+    TK.acc += dt; TK.sinceSave += dt; TK.sinceSend += dt;
+    if (TK.sinceSave >= 10) { TK.sinceSave = 0; tkSave(); }
+    if (TK.sinceSend >= 120) { TK.sinceSend = 0; tkSend(false); }
+  }, 1000);
+  document.addEventListener("visibilitychange", function () {
+    TK.t = Date.now();
+    if (document.hidden) { tkSave(); TK.sinceSend = 0; tkSend(true); }
+  });
+  window.addEventListener("pagehide", function () { tkSave(); tkSend(true); });
 })();

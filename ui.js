@@ -226,9 +226,10 @@
   function svg(n, s) { return '<svg width="' + (s || 22) + '" height="' + (s || 22) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[n] + "</svg>"; }
   var META = {
     overview: ["grid", "الصورة الكاملة للجولة"], members: ["users", "ترتيب كل واحد وتفاصيله"], teams: ["shield", "الفرق ونقاطها"], players: ["ball", "اللاعيبة ومين اشتراهم"],
+    tournaments: ["vs", "اعمل بطولتك: دوري، مجموعات، إقصاء"],
     transfers: ["swap", "مين اشترى ومين باع"], plus: ["chart", "تحليلات وتشكيلات وجوايز"], season_t: ["cal", "الموسم كله للتيمات"], captain: ["star", "كل تيم يختار كابتن الجولة"], visits: ["users", "مين دخل التطبيق وكام مرة"], season_m: ["cal", "الموسم كله لكل عضو"], cmp: ["vs", "قارن فريقين لايف"]
   };
-  var GROUPS = [["الأساسيات", ["overview", "members", "teams", "players", "transfers"]], ["الكبتنة والمجتمع", ["captain", "visits"]], ["التحليلات والموسم", ["plus", "season_t", "season_m"]]];
+  var GROUPS = [["الأساسيات", ["overview", "members", "teams", "players", "transfers"]], ["الكبتنة والمجتمع", ["captain", "visits", "tournaments"]], ["التحليلات والموسم", ["plus", "season_t", "season_m"]]];
   function lbl(b) {
     var w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT, null), n;
     while ((n = w.nextNode())) { var t = n.textContent.trim(); if (t) return t; }

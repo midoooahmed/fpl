@@ -12,7 +12,7 @@
 
   (function () {
     var st = document.createElement("style"); st.id = "nowrooCss";
-    st.textContent = ".vs-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.vs-sum div{padding:12px 8px;border-radius:16px;border:1px solid var(--ln);background:var(--s1);text-align:center}.vs-sum b{display:block;font-size:22px;font-weight:700}.vs-sum small{color:var(--mu);font-size:12px}" +
+    st.textContent = ".vs-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-top:10px}.vs-sum div{padding:12px 8px;border-radius:16px;border:1px solid var(--ln);background:var(--s1);text-align:center}.vs-sum b{display:block;font-size:22px;font-weight:700}.vs-sum small{color:var(--mu);font-size:12px}" +
       "#vsAdm{position:fixed;inset:0;z-index:95;display:grid;place-items:center;padding:20px;background:rgba(4,6,12,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}#vsAdm .tc{width:min(360px,100%);padding:22px;border-radius:24px;background:var(--s1);border:1px solid var(--ln);box-shadow:0 24px 60px rgba(0,0,0,.4)}" +
       "#vsAdm h3{margin:0 0 6px;font-size:18px;font-weight:600}#vsAdm p{margin:0 0 12px;color:var(--mu);font-size:13px;line-height:1.7}#vsAdm input{width:100%;height:48px;padding:0 14px;margin-bottom:10px;border-radius:14px;border:1.5px solid var(--ln);background:var(--s2);color:var(--tx);font:inherit;outline:none}#vsAdm .ab{display:grid;gap:8px}";
     document.head.appendChild(st);
@@ -27,17 +27,17 @@
   function build() {
     var rows = ST.rows || [], T = {}, M = [];
     rows.forEach(function (r) {
-      var t = T[r.team] || (T[r.team] = { team: r.team, count: 0, people: 0, lastTs: 0, last: "" });
-      t.count += r.count; t.people++;
+      var t = T[r.team] || (T[r.team] = { team: r.team, count: 0, people: 0, lastTs: 0, last: "", secs: 0 });
+      t.count += r.count; t.people++; t.secs += r.secs || 0;
       if (r.lastTs > t.lastTs) { t.lastTs = r.lastTs; t.last = r.last; }
-      M.push({ person: r.person, team: r.team, entryId: r.entryId, count: r.count, lastTs: r.lastTs, last: r.last });
+      M.push({ person: r.person, team: r.team, entryId: r.entryId, count: r.count, lastTs: r.lastTs, last: r.last, secs: r.secs || 0 });
     });
     var TL = Object.keys(T).map(function (k) { return T[k]; }).sort(function (a, b) { return b.count - a.count || a.team.localeCompare(b.team, "ar"); });
     M.sort(function (a, b) { return b.count - a.count || a.person.localeCompare(b.person, "ar"); });
     var rt = ranks(TL, "count"), rm = ranks(M, "count");
     TL.forEach(function (t, i) { t.rank = rt[i]; });
     M.forEach(function (m, i) { m.rank = rm[i]; });
-    return { T: TL, M: M, total: rows.reduce(function (s, r) { return s + r.count; }, 0) };
+    return { T: TL, M: M, total: rows.reduce(function (s, r) { return s + r.count; }, 0), secs: rows.reduce(function (s, r) { return s + (r.secs || 0); }, 0) };
   }
   function uidOf(team, entryId) {
     var m = ((S.D && S.D.members) || []).filter(function (x) { return x.team === team && x.entryId === entryId; })[0];
@@ -52,12 +52,14 @@
         col("team", "التيم", function (t) { return t.team; }, { num: false }),
         col("count", "عدد المرات", function (t) { return t.count; }, { tot: 1 }),
         col("people", "عدد الأعضاء اللي دخلوا", function (t) { return t.people; }, { tot: 1 }),
-        col("last", "آخر دخول", function (t) { return t.lastTs; }, { h: function (t) { return esc(t.last || "–"); } })
+        col("secs", "إجمالي وقت التيم", function (t) { return t.secs; }, { h: function (t) { return esc(F.dur(t.secs)); }, csv: function (t) { return F.dur(t.secs); } }),
+        col("avg", "متوسط الوقت للعضو", function (t) { return t.people ? Math.round(t.secs / t.people) : 0; }, { h: function (t) { return esc(F.dur(t.people ? t.secs / t.people : 0)); }, csv: function (t) { return F.dur(t.people ? t.secs / t.people : 0); } }),
+        col("last", "آخر دخول", function (t) { return t.lastTs; }, { h: function (t) { return esc(F.when(t.lastTs) || "–"); }, csv: function (t) { return F.when(t.lastTs); } })
       ];
       return GRID.render({
         key: "visits_t", title: "اللي نوّروا وشرّفوا - ترتيب التيمات", rows: B.T, cols: cols, rowKey: function (t) { return t.team; },
         act: function (t) { return ' data-act="t" data-arg="' + esc(t.team) + '"'; }, defSort: function (a, b) { return a.rank - b.rank || a.team.localeCompare(b.team, "ar"); },
-        totals: function (l) { var o = { rank: "الإجمالي - " + l.length + " تيم" }; cols.forEach(function (c) { if (c.tot) o[c.k] = l.reduce(function (s, r) { return s + (Number(c.v(r)) || 0); }, 0); }); return o; }
+        totals: function (l) { var o = { rank: "الإجمالي - " + l.length + " تيم" }; cols.forEach(function (c) { if (c.tot) o[c.k] = l.reduce(function (s, r) { return s + (Number(c.v(r)) || 0); }, 0); }); o.secs = F.dur(l.reduce(function (s, r) { return s + (r.secs || 0); }, 0)); return o; }
       });
     }
     var cols2 = [
@@ -65,13 +67,14 @@
       col("person", "العضو", function (m) { return m.person; }, { num: false }),
       col("team", "التيم", function (m) { return m.team; }, { num: false }),
       col("count", "عدد المرات", function (m) { return m.count; }, { tot: 1 }),
-      col("last", "آخر دخول", function (m) { return m.lastTs; }, { h: function (m) { return esc(m.last || "–"); } })
+      col("secs", "مدة الاستخدام", function (m) { return m.secs; }, { h: function (m) { return esc(F.dur(m.secs)); }, csv: function (m) { return F.dur(m.secs); } }),
+      col("last", "آخر دخول", function (m) { return m.lastTs; }, { h: function (m) { return esc(F.when(m.lastTs) || "–"); }, csv: function (m) { return F.when(m.lastTs); } })
     ];
     return GRID.render({
       key: "visits_m", title: "اللي نوّروا وشرّفوا - ترتيب الأعضاء", rows: B.M, cols: cols2, rowKey: function (m) { return m.team + "|" + m.entryId; },
       act: function (m) { var u = uidOf(m.team, m.entryId); return u ? ' data-act="m" data-arg="' + esc(u) + '"' : ""; },
       defSort: function (a, b) { return a.rank - b.rank || a.person.localeCompare(b.person, "ar"); },
-      totals: function (l) { var o = { rank: "الإجمالي - " + l.length + " عضو" }; cols2.forEach(function (c) { if (c.tot) o[c.k] = l.reduce(function (s, r) { return s + (Number(c.v(r)) || 0); }, 0); }); return o; }
+      totals: function (l) { var o = { rank: "الإجمالي - " + l.length + " عضو" }; cols2.forEach(function (c) { if (c.tot) o[c.k] = l.reduce(function (s, r) { return s + (Number(c.v(r)) || 0); }, 0); }); o.secs = F.dur(l.reduce(function (s, r) { return s + (r.secs || 0); }, 0)); return o; }
     });
   }
 
@@ -82,7 +85,7 @@
     if (!ST.rows) return tg + '<div class="plz" style="min-height:220px"></div>';
     if (!ST.rows.length) return tg + '<div class="empty">لسه محدش دخل. أول واحد يدوس زرار "ما تصلّوا على النبي" هيظهر هنا.</div>';
     var B = build();
-    return tg + '<div class="vs-sum"><div><b>' + fmtN(B.total) + "</b><small>إجمالي الدخولات</small></div><div><b>" + fmtN(B.M.length) + "</b><small>عضو دخل</small></div><div><b>" + fmtN(B.T.length) + "</b><small>تيم دخل</small></div></div>" + table(B);
+    return tg + '<div class="vs-sum"><div><b>' + fmtN(B.total) + "</b><small>إجمالي الدخولات</small></div><div><b>" + fmtN(B.M.length) + "</b><small>عضو دخل</small></div><div><b>" + fmtN(B.T.length) + "</b><small>تيم دخل</small></div><div><b>" + esc(F.dur(B.secs)) + "</b><small>إجمالي وقت الاستخدام</small></div></div>" + table(B);
   }
 
   function load(silent) {

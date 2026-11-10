@@ -12,7 +12,8 @@
 //   autoLive&key=..   -> تشغيل/إيقاف التحديث التلقائي كل 5 دقايق
 //   sync&key=..&team= -> تحديث الأعضاء من الليغات (محتاج ADMIN_KEY)
 //   capInfo / capHistory / capSave&team&password&picks / capLock&key&locked / capInit&key / capClear&key&gw / capAuto&key&from -> كبتنة التيمات (Captain.gs)
-//   visit&team&entryId / visits / visitReset&key -> اللي نوّروا وشرّفوا (Visits.gs)
+//   visit&team&entryId / ping&team&entryId&secs / visits / visitReset&key -> اللي نوّروا وشرّفوا + مدة الاستخدام (Visits.gs)
+//   tmList / tmCheck&key / tmSave (POST) / tmDelete&key&id -> صانع البطولات (Tournament.gs)
 // ADMIN_KEY: Project Settings > Script properties > أضف ADMIN_KEY وقيمته أي كلمة سر
 // =====================================================================
 function handleApi_(p) {
@@ -52,8 +53,14 @@ function handleApi_(p) {
       case "capAuto": out = capAuto_(p); break;
       // اللي نوّروا وشرّفوا (Visits.gs)
       case "visit": out = visit_(p); break;
+      case "ping": out = ping_(p); break;
       case "visits": out = visits_(); break;
       case "visitReset": out = visitReset_(p); break;
+      // صانع البطولات (Tournament.gs)
+      case "tmList": out = tmList_(); break;
+      case "tmCheck": out = tmCheck_(p); break;
+      case "tmSave": out = tmSave_(p); break;
+      case "tmDelete": out = tmDelete_(p); break;
       default: out = { success: false, message: "api غير معروف" };
     }
   } catch (e) {
