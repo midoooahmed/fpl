@@ -42,10 +42,13 @@
     L.hidden = false; w.classList.add("open");
   }
   function sdClose() { $$(".sd.open").forEach(function (w) { w.classList.remove("open"); var l = w.querySelector(".sd-list"); if (l) l.hidden = true; }); }
+  /* لما تلمس اختيار في القايمة، الفوكس بيروح للزرار. ماينفعش نقفل القايمة وقتها، وإلا الضغطة مش بتوصل (ده كان سبب إن الاختيار مش بيتداس). */
   document.addEventListener("focusin", function (e) {
     var s = sdOf(e.target);
-    if (s && e.target.classList.contains("sd-in")) { if (e.target.select) e.target.select(); sdOpen(s.w, s.id, ""); } else sdClose();
+    if (s && e.target.classList.contains("sd-in")) { if (e.target.select) e.target.select(); sdOpen(s.w, s.id, ""); }
+    else if (!s) sdClose();
   });
+  document.addEventListener("mousedown", function (e) { if (e.target.closest && e.target.closest(".sd-list")) e.preventDefault(); }, true);
   document.addEventListener("input", function (e) { var s = sdOf(e.target); if (s && e.target.classList.contains("sd-in")) sdOpen(s.w, s.id, e.target.value); });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Enter") return;
