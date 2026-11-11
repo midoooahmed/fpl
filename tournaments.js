@@ -717,11 +717,15 @@
         var rs0 = result(it), X0 = rs0 && resolveCmp(rs0, arg);
         if (!X0) return true;
         if (!canOpen(X0.a, X0.b)) { F.toast("تقدر تفتح مواجهة فريقك بس"); return true; }
-        ST.cmp = { id: it.id, key: arg };
+        ST.cmp = { id: it.id, key: arg }; ST.duel = null; ST.cmpForce = false;
         LS.set("fc_tmcmp", JSON.stringify({ id: it.id, key: arg, cur: S.cur || S.gw || 0, label: nameOf(X0.a) + " × " + nameOf(X0.b) }));
         syncCmpItem(); F.render(); window.scrollTo(0, 0); return true;
       }
+      case "cmpforce": ST.cmpForce = true; F.render(); return true;
+      case "duel": { var dp = String(arg).split(":"); ST.duel = { li: Number(dp[0]), i: Number(dp[1]) }; F.render(); window.scrollTo(0, 0); return true; }
+      case "duelback": ST.duel = null; F.render(); return true;
       case "cmpback": {
+        ST.duel = null; ST.cmpForce = false;
         if (S.tab === "tmcmp") { var sv0 = savedCmp(); if (sv0) { ST.cur = sv0.id; ST.cmp = null; saveUI(); } F.setTab("tournaments"); return true; }
         ST.cmp = null; F.render(); return true;
       }
@@ -988,6 +992,14 @@
     return T ? { total: T.total, avg: T.avg, best: T.best ? "ج" + T.best.g + " (" + fmt(T.best.v) + ")" : "–", hits: T.hits, bench: T.benchN ? T.bench : null, n: T.gp } : null;
   }
   function wc(a, b, f) { return a != null && b != null && f(a, b) ? ' class="tm-w"' : ""; }
+  function memRef(id) { var p = String(id).split("|"); return { team: p[0], entryId: p.slice(1).join("|") }; }
+  /* حوار المقارنة الأصلي بتاع التطبيق (compare.js) بيتفتح هنا تلقائي على الطرفين، بحالة منفصلة عن تبويب المقارنات */
+  function embedFor(X, a, b, gws, key) {
+    var E = window.__cmpEmbed; if (!E) return "";
+    if ((gws || []).indexOf(S.gw) < 0 && !ST.cmpForce) return F.card("حوار المقارنة", '<div class="ct">حوار المقارنة</div><div class="tm-hint" style="margin:-4px 0 10px">حوار المقارنة بيحلل الجولة المعروضة دلوقتي (ج' + S.gw + ")، وجولات الماتش ده: " + esc(gwTxt(gws)) + ".</div>" + '<button class="chip" data-tm="cmpforce">افتح حوار المقارنة لـ ج' + S.gw + " برضو</button>", "plus ov-full");
+    var o = isMem(a) ? { key: "M|" + a + "|" + b, mode: "m", a: memRef(a), b: memRef(b) } : { key: "T|" + a + "|" + b, mode: "t", t1: a, t2: b };
+    return '<div class="sec">حوار المقارنة · ج' + S.gw + "</div>" + E.html(o);
+  }
   function cmpHtml(it, key, fromDrawer) {
     var res = result(it), back = '<div class="tm-top"><div class="tm-row"><button class="chip" data-tm="cmpback">← ' + (fromDrawer ? "البطولة" : "رجوع") + '</button></div><div class="tm-row"><span class="tm-pill">' + esc(it.cfg.name) + "</span></div></div>";
     if (!res) { pollModel(); return back + '<div class="plz" style="min-height:240px;margin-top:12px"></div>'; }
@@ -996,7 +1008,16 @@
     if (!canOpen(X.a, X.b)) return back + '<div class="empty">تقدر تفتح مواجهة فريقك بس.</div>';
     var ctx = res.ctx, aN = esc(nameOf(X.a)), bN = esc(nameOf(X.b)), gws = X.gws.filter(function (g) { return res.M.gws.indexOf(g) > -1; });
     var stt = X.done ? (X.live ? "لايف" : "خلصت") : "لسه";
+    if (ST.duel && X.legs[ST.duel.li] && X.legs[ST.duel.li].duel && X.legs[ST.duel.li].duel.pairs[ST.duel.i]) {
+      var f0 = X.legs[ST.duel.li], pr0 = f0.duel.pairs[ST.duel.i], g0 = (f0.gws || []).filter(function (g) { return res.M.gws.indexOf(g) > -1; });
+      var rows0 = g0.map(function (g) { var va = res.ctx.mscore(pr0.a, g), vb = res.ctx.mscore(pr0.b, g); return "<tr><td>ج" + g + "</td><td" + wc(va, vb, function (p, q) { return p > q; }) + ">" + fmt(va) + "</td><td" + wc(va, vb, function (p, q) { return q > p; }) + ">" + fmt(vb) + "</td></tr>"; }).join("");
+      return '<div class="tm-top"><div class="tm-row"><button class="chip" data-tm="duelback">← المواجهة</button></div><div class="tm-row"><span class="tm-pill">' + esc(it.cfg.name) + "</span></div></div>" +
+        F.card("مواجهة " + nameOf(pr0.a) + " × " + nameOf(pr0.b), '<div class="tm-cmp"><div class="tn">' + esc(nameOf(pr0.a)) + "<small>" + esc(subOf(pr0.a)) + '</small></div><div class="big">' + (pr0.sa != null && pr0.sb != null ? fmt(pr0.sa) + " - " + fmt(pr0.sb) : "vs") + "<small>" + esc(gwTxt(f0.gws)) + '</small></div><div class="tn b">' + esc(nameOf(pr0.b)) + "<small>" + esc(subOf(pr0.b)) + "</small></div></div>", "plus ov-full") +
+        embedFor(X, pr0.a, pr0.b, f0.gws, "") +
+        F.card("نقاط كل جولة", '<div class="ct">نقاط كل جولة</div><div class="tbl-sc"><table class="tm-st"><thead><tr><th>الجولة</th><th>' + esc(nameOf(pr0.a)) + "</th><th>" + esc(nameOf(pr0.b)) + "</th></tr></thead><tbody>" + rows0 + "</tbody></table></div>", "plus ov-full");
+    }
     var h = back + F.card("مقارنة " + nameOf(X.a) + " × " + nameOf(X.b), '<div class="tm-cmp"><div class="tn">' + aN + (subOf(X.a) ? "<small>" + esc(subOf(X.a)) + "</small>" : "") + '</div><div class="big">' + (X.sa != null && X.sb != null ? fmt(X.sa) + " - " + fmt(X.sb) : "vs") + "<small>" + esc(gwTxt(X.gws)) + " · " + stt + '</small></div><div class="tn b">' + bN + (subOf(X.b) ? "<small>" + esc(subOf(X.b)) + "</small>" : "") + "</div></div>" + (X.by ? '<div class="tm-dx" style="padding:0 14px 10px">' + esc(X.by) + "</div>" : ""), "plus ov-full");
+    h += embedFor(X, X.a, X.b, X.gws, "");
     /* نقاط كل جولة */
     var tot = [0, 0], rowsG = gws.map(function (g) {
       var va = ctx.score(X.a, g), vb = ctx.score(X.b, g); tot[0] += va || 0; tot[1] += vb || 0;
@@ -1021,12 +1042,11 @@
     X.legs.forEach(function (f, li) {
       var D = f.duel; if (!D) return;
       var gg = (f.gws || []).filter(function (g) { return res.M.gws.indexOf(g) > -1; });
-      var body = D.pairs.map(function (pr) {
-        var rows = gg.map(function (g) { var va = ctx.mscore(pr.a, g), vb = ctx.mscore(pr.b, g); return "<tr><td>ج" + g + "</td><td" + wc(va, vb, function (p, q) { return p > q; }) + ">" + fmt(va) + "</td><td" + wc(va, vb, function (p, q) { return q > p; }) + ">" + fmt(vb) + "</td></tr>"; }).join("");
-        return '<details class="tm-du"><summary><span class="tm-dn a' + (pr.res === "a" ? " w" : "") + '">' + esc(nameOf(pr.a)) + '</span><span class="tm-dsc">' + (pr.sa != null && pr.sb != null ? fmt(pr.sa) + " - " + fmt(pr.sb) : "vs") + '</span><span class="tm-dn b' + (pr.res === "b" ? " w" : "") + '">' + esc(nameOf(pr.b)) + '</span></summary><div class="in"><table class="tm-st"><thead><tr><th>الجولة</th><th>' + esc(nameOf(pr.a)) + "</th><th>" + esc(nameOf(pr.b)) + "</th></tr></thead><tbody>" + rows + "</tbody></table></div></details>";
-      }).join("");
+      var body = '<div class="tm-gpf" style="padding:0">' + D.pairs.map(function (pr, pi) {
+        return '<div class="tm-dr can' + (isMine(pr.a) || isMine(pr.b) ? " me" : "") + '" data-tm="duel" data-a="' + li + ":" + pi + '"><span class="tm-dn a' + (pr.res === "a" ? " w" : "") + '">' + esc(nameOf(pr.a)) + '</span><span class="tm-dsc">' + (pr.sa != null && pr.sb != null ? fmt(pr.sa) + " - " + fmt(pr.sb) : "vs") + '</span><span class="tm-dn b' + (pr.res === "b" ? " w" : "") + '">' + esc(nameOf(pr.b)) + '</span><i class="tm-go">‹</i></div>';
+      }).join("") + "</div>";
       var sum = D.done ? "الفوز: " + aN + " " + D.wa + " · " + bN + " " + D.wb + (D.d ? " · تعادل " + D.d : "") + " — " + (D.res === "a" ? aN : D.res === "b" ? bN : "تعادل") : "لسه المواجهات مخلصتش";
-      h += F.card("مواجهات الأعضاء", '<div class="ct">مواجهات الأعضاء' + (X.legs.length > 1 ? " - الماتش " + (li + 1) : "") + '</div><div class="tm-hint" style="margin:-4px 0 8px">' + sum + (D.done && D.mode !== "only" ? " (+" + fmt(D.pa) + " / +" + fmt(D.pb) + " نقطة)" : "") + " · دوس على أي مواجهة تشوف تفاصيلها.</div>" + body, "plus ov-full");
+      h += F.card("مواجهات الأعضاء", '<div class="ct">مواجهات الأعضاء' + (X.legs.length > 1 ? " - الماتش " + (li + 1) : "") + '</div><div class="tm-hint" style="margin:-4px 0 8px">' + sum + (D.done && D.mode !== "only" ? " (+" + fmt(D.pa) + " / +" + fmt(D.pb) + " نقطة)" : "") + " · دوس على أي مواجهة تفتح حوار المقارنة بتاعها.</div>" + body, "plus ov-full");
     });
     return h;
   }
@@ -1044,6 +1064,7 @@
   }
   window.__tmNav = {
     back: function () {
+      if ((S.tab === "tmcmp" || S.tab === "tournaments") && ST.duel) { ST.duel = null; F.render(); return true; }
       if (S.tab === "tmcmp") { F.setTab("tournaments"); var sv = savedCmp(); if (sv) { ST.cur = sv.id; ST.cmp = null; saveUI(); F.render(); } return true; }
       if (S.tab !== "tournaments") return false;
       if (ST.edit) { if (confirm("تخرج من غير ما تحفظ التعديلات؟")) { ST.edit = null; ST.editId = null; F.render(); } return true; }
