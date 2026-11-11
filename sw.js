@@ -1,4 +1,4 @@
-const V = "fc-v17", SHELL = ["./", "index.html", "grid.js", "plus.js", "season.js", "tables.js", "compare.js", "welcome.js", "modern.js", "captaincy.js", "nowroo.js", "tm-engine.js", "tournaments.js", "trials.js", "trial-gate.js", "ui.js", "config.js", "manifest.webmanifest", "icon-192.png", "logo.png", "icon-512.png"];
+const V = "fc-v18", SHELL = ["./", "index.html", "grid.js", "plus.js", "season.js", "tables.js", "compare.js", "welcome.js", "modern.js", "captaincy.js", "nowroo.js", "tm-engine.js", "tournaments.js", "trials.js", "trial-gate.js", "ui.js", "config.js", "manifest.webmanifest", "icon-192.png", "logo.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== V).map(x => caches.delete(x)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {
