@@ -5,6 +5,8 @@ var LS={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}
 var WD=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"],PLN={1:"حارس",2:"مدافع",3:"وسط",4:"مهاجم"};
 var ENC=encodeURIComponent,DEC=decodeURIComponent;
 var C={mode:"t",teams:null,loading:false,t1:"",t2:"",RS:null,tab:"c",q:"",rem:false,lv:false,pos:"",shown:false,prep:null,busy:false,mq:"",mf:0,WI:null};
+/* MAINC = حالة تبويب المقارنة الأصلي. EMB = مقارنات مدمجة جوه صفحات البطولات (كل واحدة بحالتها المستقلة وبدون ما تلمس المقارنة الأصلية) */
+var MAINC=C,ACT=null,EMB={};
 var SH={},cap={1:{},2:{}},ct=1;
 /* مقارنات التيمات ومقارنات الأعضاء كل واحدة في قايمة صفحات منفصلة، وكلها بتتحفظ في الجهاز (حتى لو قفلت التطبيق) */
 var PGS={t:{list:[{id:1,name:"",t1:"",t2:"",snap:null}],act:1,n:1},m:{list:[{id:1,name:"",t1:"",t2:"",snap:null}],act:1,n:1}},PG=PGS.t;
@@ -24,6 +26,7 @@ function memLabels(){
   S.D.members.forEach(function(m){var k=m.person+" - "+m.team;cnt[k]=(cnt[k]||0)+1});
   S.D.members.forEach(function(m){var k=m.person+" - "+m.team;if(cnt[k]>1&&m.contest)k+=" ("+m.contest+")";while(MEM[k])k+=" #"+m.entryId;MEM[k]=m;L.push(k)});
   return L.sort(function(a,b){return a.localeCompare(b,"ar")})}
+function memKey(team,entryId){memLabels();var ks=Object.keys(MEM);for(var i=0;i<ks.length;i++){var m=MEM[ks[i]];if(String(m.entryId)===String(entryId)&&(!team||m.team===team))return ks[i]}return""}
 function LIST(){return C.mode==="m"?memLabels():(C.teams||[])}
 /* توقع تقريبي لنقاط اللي لسه ماخلصوش (مفيش xP في الداتا): متوسط نقاط اللي لعبوا فعلًا في نفس المركز بالجولة دي، مضروب في احتمال المشاركة */
 function priors(){
@@ -61,7 +64,7 @@ function memberR(){
 function modeHtml(){return'<div class="tbar" style="margin:10px 0 0"><div class="sg"><button data-cmode="t" class="'+(C.mode==="t"?"on":"")+'">مقارنة تيمات</button><button data-cmode="m" class="'+(C.mode==="m"?"on":"")+'">مقارنة أعضاء</button></div></div>'}
 
 function serPG(g){return{act:g.act,n:g.n,list:g.list.map(function(p){return{id:p.id,name:p.name,t1:p.t1,t2:p.t2}})}}
-function savePG(){var c=cur();if(c){c.t1=C.t1;c.t2=C.t2}LS.set("fc_cmp3",JSON.stringify({mode:C.mode,t:serPG(PGS.t),m:serPG(PGS.m)}))}
+function savePG(){if(C!==MAINC)return;var c=cur();if(c){c.t1=C.t1;c.t2=C.t2}LS.set("fc_cmp3",JSON.stringify({mode:C.mode,t:serPG(PGS.t),m:serPG(PGS.m)}))}
 /* تبديل بين تيمات/أعضاء: بنحفظ الحالة الحالية (بنتيجتها) ونفتح آخر صفحة كانت مفتوحة في الوضع التاني */
 function setMode(nm){if(nm===C.mode)return;snap(cur());savePG();C.mode=nm;PG=PGS[nm];restore(cur());C.t1=cur().t1;C.t2=cur().t2;C.prep=null;savePG()}
 var FIELDS=["t1","t2","RS","tab","q","rem","lv","pos","shown","WI","mq","mf"];
@@ -140,8 +143,12 @@ function pgsHtml(){return'<div class="pgs">'+PG.list.map(function(p,i){var cv=p.
 function pk(slot,v){return'<div class="k" style="margin:'+(slot===1?"0":"10px")+' 0 6px">'+(C.mode==="m"?(slot===1?"العضو الأول - اختار أو ابحث 🔍":"العضو التاني - اختار أو ابحث 🔍"):(slot===1?"الفريق الأول - اختار أو ابحث 🔍":"الفريق الثاني - اختار أو ابحث 🔍"))+'</div><button class="pk" data-cpk="'+slot+'"><span>'+(v?esc(v):(C.mode==="m"?(slot===1?"اختر العضو الأول...":"اختر العضو التاني..."):(slot===1?"اختر الفريق الأول...":"اختر الفريق الثاني...")))+"</span>"+F.ic("cd",18)+"</button>"}
 function teamCard(i,r,net,g,hits,note,pl,second){return'<div class="cd tm'+(second?"":" b")+'" data-ctab="m" data-cmf="'+i+'"><div class="nm3">'+esc(i===1?r.team1Name:r.team2Name)+'</div><div class="cp3">'+esc(note)+'</div><div class="sc n">'+net+'</div><div class="mini2"><span>الأساسية '+g+'</span><span class="dn n">السوالب '+(hits>0?"-"+hits:0)+'</span></div><div class="mini2"><span>لعب '+pl.pl+" من "+pl.tot+' لعيبه</span><span>الباقي '+pl.rem+" ("+pl.w+")</span></div></div>"}
 R.views.cmp=function(){
+  C=MAINC;ACT=null;
   if(C.mode!=="m"&&!C.teams&&!C.loading){C.loading=true;F.api({api:"teams"}).then(function(r){C.teams=Array.isArray(r)?r:[];C.loading=false;F.render()}).catch(function(){C.teams=[];C.loading=false;F.render();toast("تعذّر تحميل قايمة الفرق")})}
   var h=pgsHtml()+modeHtml()+'<div class="cd" style="margin-top:10px">'+pk(1,C.t1)+pk(2,C.t2)+'<button class="btn b1" data-cstart style="width:100%;margin-top:14px"'+(C.busy?" disabled":"")+">"+(C.busy?"بيحلل...":"ابدأ التحليل ⚡")+"</button></div>";
+  return cmpBody(h)}
+/* جسم المقارنة (النتيجة + التابات + الجداول): مشترك بين التبويب الأصلي والمقارنات المدمجة في البطولات */
+function cmpBody(h){
   if(!C.RS)return h+(C.mode!=="m"&&C.teams&&!C.teams.length?'<div class="empty">قايمة الفرق فاضية - ضيف تيمات في شيت "الفرق"</div>':"");
   var Q=C.RS,r=Q.r,w=winPct(),a1=wst(Q.D.a),a2=wst(Q.D.z),sh=C.shown;
   h+='<div class="sec">الجولة '+r.gameweek+' · مباشر</div><div class="vsr">'+teamCard(1,r,Q.net1,Q.g1,r.team1Hits,capNote(r.team1CaptainMode,r.team1CaptainName,r.team1CaptainMultiplier),a1,false)+'<div class="vsc">VS</div>'+teamCard(2,r,Q.net2,Q.g2,r.team2Hits,capNote(r.team2CaptainMode,r.team2CaptainName,r.team2CaptainMultiplier),a2,true)+"</div>";
@@ -160,24 +167,31 @@ R.views.cmp=function(){
    '<div class="fr">'+[["","كل المراكز"],["1","حارس"],["2","مدافع"],["3","وسط"],["4","مهاجم"]].map(function(p){return'<span class="fchip'+(C.pos===p[0]?" on":"")+'" data-cpos="'+p[0]+'">'+p[1]+"</span>"}).join("")+'<span class="fchip" data-cfr>↺ إعادة ضبط</span></div><h4>🧩 اتحكم في الأعمدة</h4><div class="fr">'+colsFor(C.tab).map(function(c){var on=G.colOn(G.state("cmp_"+C.tab),c);return'<label class="chk"><input type="checkbox" data-cvk="'+C.tab+":"+c.k+'"'+(on?" checked":"")+"> "+esc(c.l)+"</label>"}).join("")+"</div></div>";
   var titles={c:"اللاعبون المشتركون",a:"أسلحة "+r.team1Name,z:"أسلحة "+r.team2Name,b:"غرفة الدكة"};
   return h+gridOf(C.tab,titles[C.tab])}
-R.input=(function(prev){return function(e){if(prev)prev(e);var t=e.target,id=t.id,pos;
+function ctxFrom(t){
+  if(!t||!t.closest)return;
+  var e=t.closest(".cmpEmb");
+  if(e){var k=e.getAttribute("data-ek");if(EMB[k]){C=EMB[k];ACT=k;return}}
+  if(S.tab==="cmp"&&t.closest("#view")){C=MAINC;ACT=null}}
+R.input=(function(prev){return function(e){if(prev)prev(e);ctxFrom(e.target);var t=e.target,id=t.id,pos;
   if(id==="cq"||id==="cmq"){if(id==="cq")C.q=t.value;else C.mq=t.value;pos=t.selectionStart;F.render();var n=F.$("#"+id);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(x){}}}
   if(id==="c1q"){var q=t.value.toLowerCase();F.$$("[data-cpick]").forEach(function(d){d.style.display=DEC(d.getAttribute("data-cpick").split(":")[1]).toLowerCase().indexOf(q)>-1?"":"none"})}}})(R.input);
 
 /* ---------- التشغيل ---------- */
 function ovOf(k){return SH[k]?JSON.stringify({mode:"shock",captainId:null,multiplier:SH[k]}):null}
 function run(save){
+  var c0=C;
   C.busy=true;F.render();var q={api:"cmp",t1:C.t1,t2:C.t2};
   if(save){q.save=1;q.c1=JSON.stringify(cap[1]);q.c2=JSON.stringify(cap[2])}else{var a=ovOf(C.t1),b=ovOf(C.t2);if(a)q.c1=a;if(b)q.c2=b}
-  return (C.mode==="m"?Promise.resolve(memberR()):F.api(q)).then(function(r){C.busy=false;if(!r||r.error){toast(r&&r.error||"تعذّر التحليل");F.render();return}
+  return (C.mode==="m"?Promise.resolve(memberR()):F.api(q)).then(function(r){C=c0;C.busy=false;if(!r||r.error){toast(r&&r.error||"تعذّر التحليل");F.render();return}
     if(save){SH[C.t1]=cap[1].mode==="shock"?cap[1].multiplier:0;SH[C.t2]=cap[2].mode==="shock"?cap[2].multiplier:0}
-    C.RS=build(r);C.WI=null;C.shown=false;savePG();F.render()}).catch(function(){C.busy=false;toast("حصل خطأ في التحليل");F.render()})}
+    C.RS=build(r);C.WI=null;C.shown=false;savePG();F.render()}).catch(function(){C=c0;C.busy=false;toast("حصل خطأ في التحليل");F.render()})}
 function start(){
+  var c0=C;
   if(!C.t1||!C.t2){toast(C.mode==="m"?"يرجى اختيار عضوين.":"يرجى اختيار فريقين.");return}if(C.t1===C.t2){toast(C.mode==="m"?"اختر عضوين مختلفين.":"اختر فريقين مختلفين.");return}
   if(C.mode==="m"){run(false);return}
   C.busy=true;F.render();
-  F.api({api:"prep",t1:C.t1,t2:C.t2}).then(function(p){C.busy=false;if(!p||p.error){toast(p&&p.error||"تعذّر تجهيز المقارنة");F.render();return}C.prep=p;
-    if(p.team1.needsCaptain||p.team2.needsCaptain){F.render();openCap()}else run(false)}).catch(function(){C.busy=false;toast("حصل خطأ في تجهيز المقارنة");F.render()})}
+  F.api({api:"prep",t1:C.t1,t2:C.t2}).then(function(p){C=c0;C.busy=false;if(!p||p.error){toast(p&&p.error||"تعذّر تجهيز المقارنة");F.render();return}C.prep=p;
+    if(p.team1.needsCaptain||p.team2.needsCaptain){F.render();openCap()}else run(false)}).catch(function(){C=c0;C.busy=false;toast("حصل خطأ في تجهيز المقارنة");F.render()})}
 function openCap(){
   var p=C.prep;[1,2].forEach(function(i){var s=p["team"+i].saved||{mode:"auto",captainId:null,multiplier:2},k=i===1?C.t1:C.t2;cap[i]={mode:s.mode||"auto",captainId:s.captainId||null,multiplier:Number(s.multiplier)===3?3:2};if(SH[k])cap[i]={mode:"shock",captainId:null,multiplier:SH[k]}});
   ct=1;paintCap(true)}
@@ -217,6 +231,7 @@ function weapons(){
 
 /* ---------- الأحداث ---------- */
 R.click=(function(prev){return function(e){
+  ctxFrom(e.target);
   if(prev&&prev(e))return true;var t=e.target,m;
   if((m=t.closest("[data-cpg]"))&&!t.closest("[data-cpe]")&&!t.closest("[data-cpx]")){var id=Number(m.getAttribute("data-cpg"));if(id!==PG.act){snap(cur());PG.act=id;restore(cur());savePG();F.render()}return true}
   if(t.closest("[data-cpadd]")){if(PG.list.length>=15){toast("أقصى عدد للصفحات 15");return true}snap(cur());var np={id:++PG.n,name:"",t1:"",t2:"",snap:null};PG.list.push(np);PG.act=np.id;restore(np);C.t1="";C.t2="";C.RS=null;savePG();F.render();return true}
@@ -236,8 +251,8 @@ R.click=(function(prev){return function(e){
   if(t.closest("[data-crf]")){run(false);return true}
   if(t.closest("[data-cxl]")){excel();return true}
   if(t.closest("[data-cweap]")){weapons();return true}
-  if(t.closest("[data-cshot]")){var tw=F.$("#view .tw");var tgt=tw||F.$("#view");F.capture(tgt,(tw&&tw.getAttribute("data-t"))||"المقارنة");return true}
-  if(t.closest("[data-ccap]")){if(C.mode==="m"){toast("مقارنة الأعضاء بتستخدم الكابتن الحقيقي بتاع كل عضو");return true}C.busy=true;F.render();F.api({api:"prep",t1:C.t1,t2:C.t2}).then(function(pp){C.busy=false;F.render();if(pp&&!pp.error){C.prep=pp;openCap()}else toast("تعذّر تحميل الكباتن")}).catch(function(){C.busy=false;F.render()});return true}
+  if(t.closest("[data-cshot]")){var tw=t.closest(".cmpEmb")?t.closest(".cmpEmb").querySelector(".tw"):F.$("#view .tw");var tgt=tw||F.$("#view");F.capture(tgt,(tw&&tw.getAttribute("data-t"))||"المقارنة");return true}
+  if(t.closest("[data-ccap]")){if(C.mode==="m"){toast("مقارنة الأعضاء بتستخدم الكابتن الحقيقي بتاع كل عضو");return true}var c0=C;C.busy=true;F.render();F.api({api:"prep",t1:C.t1,t2:C.t2}).then(function(pp){C=c0;C.busy=false;F.render();if(pp&&!pp.error){C.prep=pp;openCap()}else toast("تعذّر تحميل الكباتن")}).catch(function(){C=c0;C.busy=false;F.render()});return true}
   if((m=t.closest("[data-cct]"))){ct=Number(m.getAttribute("data-cct"));paintCap();return true}
   if((m=t.closest("[data-ccm]"))){if(cap[ct].mode!=="none"){cap[ct].multiplier=Number(m.getAttribute("data-ccm"));paintCap()}return true}
   if((m=t.closest("[data-ccp]"))){var z=m.getAttribute("data-ccp").split(":");cap[ct].mode=z[0];cap[ct].captainId=z[1]||null;paintCap();return true}
@@ -251,16 +266,43 @@ R.click=(function(prev){return function(e){
   if(t.closest("[data-cwx]")){C.WI.rows.forEach(function(r){var v=Math.max(-10,Math.min(40,Math.round(r.points+r.xp)));if(v!==r.points)C.WI.preds[r.key]=v;else delete C.WI.preds[r.key]});C.WI.applied=wiCalc();F.render();return true}
   return false}})(R.click);
 /* زرار "مقارنة عضوين" في كل التطبيق بيفتح نفس شاشة المقارنة في وضع الأعضاء */
-R.cmp2=function(){setMode("m");F.setTab("cmp")};
+R.cmp2=function(){C=MAINC;ACT=null;setMode("m");F.setTab("cmp")};
 
 /* لما تفتح المقارنة وفيها عضوين/تيمين محفوظين من قبل، بنعيد التحليل لوحدنا عشان تلاقيها قدامك بأحدث نقاط */
 var TRIED={};
 function autoRun(){
   if(C.busy||C.RS||!C.t1||!C.t2||C.t1===C.t2||!S.D)return;
-  var key=C.mode+"|"+C.t1+"|"+C.t2+"|"+S.gw;
+  var c0=C,key=(C===MAINC?"":"E|")+C.mode+"|"+C.t1+"|"+C.t2+"|"+S.gw;
   if(TRIED[key])return;
   if(C.mode==="m"){memLabels();if(!MEM[C.t1]||!MEM[C.t2]||!S.D.live)return;TRIED[key]=1;run(false);return}
   TRIED[key]=1;C.busy=true;F.render();
-  F.api({api:"prep",t1:C.t1,t2:C.t2}).then(function(p){C.busy=false;if(!p||p.error){F.render();return}C.prep=p;if(p.team1.needsCaptain||p.team2.needsCaptain){F.render();return}run(false)}).catch(function(){C.busy=false;F.render()})}
-var _raC=R.afterRender;R.afterRender=function(){if(_raC)_raC();if(S.tab==="cmp")autoRun()};
+  F.api({api:"prep",t1:C.t1,t2:C.t2}).then(function(p){C=c0;C.busy=false;if(!p||p.error){F.render();return}C.prep=p;if(p.team1.needsCaptain||p.team2.needsCaptain){F.render();return}run(false)}).catch(function(){C=c0;C.busy=false;F.render()})}
+var _raC=R.afterRender;R.afterRender=function(){if(_raC)_raC();
+  if(S.tab==="cmp"){C=MAINC;ACT=null;autoRun()}
+  [].forEach.call(document.querySelectorAll(".cmpEmb"),function(el){var k=el.getAttribute("data-ek"),c=EMB[k];if(!c)return;var keep=C;C=c;try{autoRun()}finally{C=keep}});
+  if(ACT&&EMB[ACT])C=EMB[ACT];else if(S.tab==="cmp")C=MAINC};
+
+/* ---------- المقارنة المدمجة (بتستخدمها صفحات البطولات): نفس حوار المقارنة بالظبط بس بحالة منفصلة ----------
+   window.__cmpEmbed.html({key, mode:"t", t1, t2})  أو  {key, mode:"m", a:{team,entryId}, b:{team,entryId}} */
+window.__cmpEmbed={
+  html:function(o){
+    var k=o.key,c=EMB[k];
+    if(!c){c=EMB[k]={mode:"t",teams:null,loading:false,t1:"",t2:"",RS:null,tab:"c",q:"",rem:false,lv:false,pos:"",shown:false,prep:null,busy:false,mq:"",mf:0,WI:null}}
+    var t1=o.t1,t2=o.t2;
+    c.mode=o.mode==="m"?"m":"t";
+    var keep=C;C=c;var h="";
+    try{
+      if(c.mode==="m"){t1=memKey(o.a&&o.a.team,o.a&&o.a.entryId);t2=memKey(o.b&&o.b.team,o.b&&o.b.entryId)}
+      if(c.t1!==t1||c.t2!==t2){c.t1=t1;c.t2=t2;c.RS=null;c.WI=null;c.prep=null}
+      if(!c.t1||!c.t2){h='<div class="empty">'+(c.mode==="m"?"العضو ده مش موجود في بيانات الجولة":"الفريق ده مش موجود")+"</div>"}
+      else if(c.RS)h=cmpBody("");
+      else{var er=c.mode==="m"&&!c.busy?memberR().error:"";h='<div class="empty">'+(c.busy?"بيحلل المقارنة...":(er&&er!=="اختار عضوين من القايمة"?esc(er):"بيجهّز المقارنة..."))+"</div>"}
+    }finally{C=keep}
+    if(ACT&&EMB[ACT])C=EMB[ACT];
+    return'<div class="cmpEmb" data-ek="'+esc(k)+'">'+h+"</div>"},
+  drop:function(k){delete EMB[k]}
+};
+/* لما اللايف يتحدث، المقارنات المدمجة المفتوحة بتتحسب تاني لوحدها */
+R.hooks.afterLive.push(function(){
+  [].forEach.call(document.querySelectorAll(".cmpEmb"),function(el){var c=EMB[el.getAttribute("data-ek")];if(!c||!c.RS||c.busy)return;var keep=C;C=c;try{run(false)}finally{C=keep}})});
 })();
