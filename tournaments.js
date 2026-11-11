@@ -52,6 +52,7 @@
       ".tm-stg{margin-top:12px;border:1.5px solid var(--ln);border-radius:18px;padding:14px;background:var(--s1);position:relative}.tm-stg h4{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}",
       ".tm-stg h4 i{width:24px;height:24px;border-radius:8px;background:var(--ac);color:#0B0F19;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700}",
       ".tm-sb{display:flex;gap:6px;margin-inline-start:auto}.tm-sb button{border:0;background:var(--s3);color:var(--tx);width:32px;height:32px;border-radius:10px;font-size:14px;cursor:pointer}.tm-sb button.x{color:#ff6b81}",
+      ".tm-or{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--ln);border-radius:12px;background:var(--s2);margin-top:6px;font-size:13.5px}.tm-or b{width:22px;height:22px;border-radius:7px;background:var(--ac);color:#0B0F19;display:grid;place-items:center;font-size:12px}.tm-or span{flex:1}.tm-or button{border:0;background:var(--s3);color:var(--tx);width:30px;height:30px;border-radius:9px;font-size:13px;cursor:pointer}",
       ".tm-hint{font-size:12px;color:var(--mu);margin-top:6px;line-height:1.7}.tm-bar{position:sticky;bottom:0;z-index:5;margin-top:16px;padding:12px 0;display:grid;grid-template-columns:2fr 1fr;gap:10px;background:linear-gradient(to top,var(--bg) 70%,transparent)}",
       ".tm-as{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px}.tm-as select{width:auto;flex:1}",
       "#tmModal{position:fixed;inset:0;z-index:96;display:grid;place-items:center;padding:20px;background:rgba(4,6,12,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}",
@@ -147,7 +148,9 @@
       if (S.tab === "tournaments") F.render();
     }).catch(function () { ST.loading = false; if (!ST.items) ST.err = "تعذّر الاتصال بالسيرفر"; if (S.tab === "tournaments") F.render(); });
   }
-  function checkKey(k) { return F.api({ api: "tmCheck", key: k }).then(function (r) { return !!(r && r.success); }).catch(function () { return false; }); }
+  function checkKeyR(k) { return F.api({ api: "tmCheck", key: k }).catch(function () { return null; }); }
+  function checkKey(k) { return checkKeyR(k).then(function (r) { return !!(r && r.success); }); }
+  function hint(r) { var m = r && r.message; if (!m) return "تعذّر الاتصال بالسيرفر"; if (m.indexOf("غير معروف") > -1) return "السيرفر لسه على نسخة قديمة: اعمل Deploy ← New version في Apps Script"; return m; }
   if (ST.key) checkKey(ST.key).then(function (ok) { ST.admin = ok; if (S.tab === "tournaments") F.render(); });
   function persist(it, okMsg) {
     if (ST.busy) return Promise.resolve();
@@ -191,7 +194,7 @@
     var M = getM();
     h += ST.items.map(function (it) {
       var c = it.cfg, res = M ? result(it) : null, s = statusOf(res);
-      return '<div class="cd tm-it" data-tm="open" data-a="' + esc(it.id) + '"><div class="tm-top"><b>' + esc(c.name) + "</b>" + pill(s.t, s.c) + '</div><div class="tm-row">' +
+      return '<div class="cd tm-it" data-tm="open" data-a="' + esc(it.id) + '"><div class="tm-top"><b>' + esc(c.name) + "</b>" + pill(s.t, s.c) + (ST.admin ? '<button class="tm-ed" data-tm="delask" data-a="' + esc(it.id) + '" aria-label="مسح البطولة">🗑</button>' : "") + '</div><div class="tm-row">' +
         pill(MODES[c.mode] || "") + pill(c.players.length + (c.mode === "individual" ? " لاعب" : " تيم")) + pill(c.stages.length + (c.stages.length === 1 ? " مرحلة" : " مراحل")) +
         c.stages.map(function (st) { return '<span class="tm-pill">' + esc(E.TYPES[st.type] || st.type) + "</span>"; }).join("") + "</div></div>";
     }).join("");
@@ -214,7 +217,7 @@
     var head = '<div class="tm-top"><div class="tm-row"><button class="chip" data-tm="back">← البطولات</button></div><div class="tm-row">' + adminChip() + "</div></div>" +
       '<div class="tm-top tm-gap"><h2>' + esc(c.name) + '</h2></div><div class="tm-row" style="margin-top:6px">' + pill(MODES[c.mode]) + pill(c.players.length + (c.mode === "individual" ? " لاعب" : " تيم")) +
       (c.mode !== "individual" ? pill(c.scoring.team === "avg" ? "نقاط التيم = متوسط الأعضاء" : c.scoring.team === "top" ? "نقاط التيم = أحسن " + (c.scoring.n || 3) + " أعضاء" : "نقاط التيم العادية") : "") + "</div>";
-    if (ST.admin) head += '<div class="tm-row tm-gap"><button class="chip" data-tm="edit">✎ تعديل البطولة</button><button class="chip" data-tm="dup">نسخ</button><button class="chip" data-tm="del">مسح</button></div>';
+    if (ST.admin) head += '<div class="tm-row tm-gap"><button class="chip" data-tm="edit">✎ تعديل البطولة</button><button class="chip" data-tm="dup">نسخ</button><button class="chip" data-tm="delask" data-a="' + esc(it.id) + '" style="color:#ff6b81">🗑 مسح البطولة</button></div>';
     if (!M) { pollModel(); return head + '<div class="plz" style="min-height:240px;margin-top:12px"></div><div class="tm-note">بيحمّل نقاط الجولات علشان يحسب البطولة...</div>'; }
     var res = result(it);
     var note = (S.cur && S.gw !== S.cur) ? '<div class="tm-note">الأرقام محسوبة لحد <b>ج' + S.gw + '</b> (الجولة المعروضة دلوقتي). <button class="chip" data-tm="jump" style="margin-inline-start:6px">احسب لحد الجولة الحالية ج' + S.cur + "</button></div>" : "";
@@ -322,6 +325,10 @@
     if (!S0) return "";
     var h = '<div class="tm-sh"><b>' + esc(S0.name) + "</b>" + pill(esc(E.TYPES[S0.type])) + pill(S0.ents.length + " متسابق") + pill(esc(spanTxt(S0))) + stagePills(S0) + "</div>";
     S0.notes.forEach(function (n) { h += '<div class="tm-note">' + esc(n) + "</div>"; });
+    if (S0.type === "league" || S0.type === "groups" || S0.type === "swiss") {
+      var TBL = { diff: "فارق النقاط", pf: "النقاط له", wins: "عدد الفوز", h2h: "المواجهات المباشرة", season: "أداء الموسم" }, tbs = (S0.st.tb && S0.st.tb.length ? S0.st.tb : ["diff", "pf"]);
+      h += '<div class="tm-hint">ترتيب الجدول: النقاط ← ' + tbs.map(function (k) { return TBL[k] || k; }).join(" ← ") + " ← التصنيف الأولي.</div>";
+    }
     if (S0.tentative) h += '<div class="tm-note">المتسابقين هنا <b>مؤقتين</b> لأنهم جايين من مرحلة لسه ماخلصتش. هيتأكدوا تلقائي أول ما تخلص.</div>';
     if (S0.type === "knockout") {
       h += F.card(S0.name, '<div class="ct">' + esc(S0.name) + "</div>" + bracketHtml(S0), "plus ov-full");
@@ -466,6 +473,17 @@
     return h;
   }
 
+  function orderEd(path, arr, opts, note, def) {
+    arr = arr || []; var lab = {}; opts.forEach(function (x) { lab[x[0]] = x[1]; });
+    var h = '<div class="tm-hint" style="margin:0 0 4px">' + note + "</div>";
+    if (!arr.length) h += '<div class="tm-note" style="margin-top:6px">مفيش معايير: هيستخدم الافتراضي (' + def + ").</div>";
+    h += arr.map(function (k, i) {
+      return '<div class="tm-or"><b>' + (i + 1) + "</b><span>" + esc(lab[k] || k) + '</span><button data-tm="ord" data-a="' + path + "|up|" + i + '" aria-label="فوق">▲</button><button data-tm="ord" data-a="' + path + "|dn|" + i + '" aria-label="تحت">▼</button><button data-tm="ord" data-a="' + path + "|rm|" + i + '" aria-label="شيل">✕</button></div>';
+    }).join("");
+    var rest = opts.filter(function (x) { return arr.indexOf(x[0]) < 0; });
+    if (rest.length) h += '<div class="tm-row" style="margin-top:8px">' + rest.map(function (x) { return '<button class="chip" data-tm="ord" data-a="' + path + "|add|" + x[0] + '">+ ' + esc(x[1]) + "</button>"; }).join("") + "</div>";
+    return h;
+  }
   function stageEd(d, i) {
     var st = d.stages[i], p = "stages." + i + ".", src = st.src || { t: "all" }, prev = d.stages.slice(0, i), h = "", T = st.type;
     h += '<div class="tm-stg"><h4><i>' + (i + 1) + "</i>" + esc(E.TYPES[T]) + '<span class="tm-sb"><button data-tm="sup" data-a="' + i + '" aria-label="فوق">▲</button><button data-tm="sdn" data-a="' + i + '" aria-label="تحت">▼</button><button data-tm="sdup" data-a="' + i + '" aria-label="نسخ">⧉</button><button class="x" data-tm="sdel" data-a="' + i + '" aria-label="مسح">✕</button></span></h4>';
@@ -508,13 +526,13 @@
       else h += fld("كام مرة بيتقابلوا", sel(p + "legs", st.legs || 1, [[1, "مرة واحدة"], [2, "ذهاب وإياب"]], { n: 1 }));
       h += '<div class="tm-g3">' + fld("نقاط الفوز", inp(p + "win", st.win, { n: 1 })) + fld("نقاط التعادل", inp(p + "draw_pts", st.draw_pts, { n: 1 })) + fld("نقاط الخسارة", inp(p + "loss", st.loss, { n: 1 })) + "</div>";
       h += fld("هامش التعادل: لو الفرق بين النقطتين أقل من أو يساوي الرقم ده يبقى تعادل", inp(p + "margin", st.margin, { n: 1 }));
-      h += '<div class="tm-f"><span>ترتيب كسر التعادل في الجدول (بعد النقاط)</span><div class="tm-row">' + [["diff", "فارق النقاط"], ["pf", "النقاط له"], ["wins", "عدد الفوز"], ["h2h", "المواجهات المباشرة"], ["season", "أداء الموسم"]].map(function (x) { return ckArr(p + "tb", st.tb, x[0], x[1]); }).join("") + "</div></div>";
+      h += '<div class="tm-f"><span>ترتيب كسر التعادل في الجدول</span>' + orderEd(p + "tb", st.tb, [["diff", "فارق النقاط (له − عليه)"], ["pf", "النقاط له"], ["wins", "عدد الفوز"], ["h2h", "المواجهات المباشرة بينهم"], ["season", "أداء الموسم"]], "النقاط بتتحسب الأول دايمًا. لو اتساووا فيها، بيتقارنوا بالمعيار رقم 1، ولو لسه متساويين بيروحوا لرقم 2 وهكذا. لو اتساووا في كل المعايير بيتحكم التصنيف الأولي.", "diff ثم pf") + "</div>";
       if (src.t === "stage") h += fld("ترحيل نقاط المرحلة اللي فاتت (نسبة %)", inp(p + "carry", st.carry || 0, { n: 1 }));
     }
     if (T === "knockout") {
       h += '<div class="tm-g2">' + fld("الأدوار العادية", sel(p + "koLegs", st.koLegs || 1, [[1, "ماتش واحد"], [2, "ذهاب وإياب (مجموع)"]], { n: 1 })) + fld("النهائي", sel(p + "finalLegs", st.finalLegs || 1, [[1, "ماتش واحد"], [2, "ذهاب وإياب (مجموع)"]], { n: 1 })) + "</div>";
       h += '<div class="tm-row" style="margin-top:10px">' + ck(p + "third", st.third, "ماتش على المركز التالت") + "</div>";
-      h += '<div class="tm-f"><span>لو اتساووا بيتحسم إزاي (بالترتيب ده)</span><div class="tm-row">' + [["last", "الأعلى في آخر جولة"], ["season", "الأعلى في الموسم"], ["seed", "الأفضل تصنيفًا"], ["random", "قرعة"]].map(function (x) { return ckArr(p + "tie", st.tie, x[0], x[1]); }).join("") + "</div></div>";
+      h += '<div class="tm-f"><span>لو اتساووا في المجموع بيتحسم إزاي؟</span>' + orderEd(p + "tie", st.tie, [["last", "الأعلى في آخر جولة"], ["season", "الأعلى في الموسم"], ["seed", "الأفضل تصنيفًا"], ["random", "قرعة"]], "بيجرب المعيار رقم 1 الأول، ولو لسه متساويين بيروح لرقم 2 وهكذا.", "الأعلى في آخر جولة ثم الموسم ثم التصنيف") + "</div>";
     }
     if (T === "ranking") h += fld("استبعاد أسوأ كام جولة من كل متسابق", inp(p + "drop", st.drop, { n: 1 }));
     /* التصنيف */
@@ -525,7 +543,7 @@
   }
 
   function editHtml() {
-    var d = ST.edit, h = '<div class="tm-top"><h2>' + (ST.editId ? "تعديل البطولة" : "بطولة جديدة") + '</h2><button class="chip" data-tm="cancel">إلغاء</button></div>';
+    var d = ST.edit, h = '<div class="tm-top"><h2>' + (ST.editId ? "تعديل البطولة" : "بطولة جديدة") + '</h2><button class="chip" data-tm="cancel">إلغاء</button></div>' + (ST.editId ? '<div class="tm-row tm-gap"><button class="chip" data-tm="delask" data-a="' + esc(ST.editId) + '" style="color:#ff6b81">🗑 مسح البطولة دي</button></div>' : "");
     h += '<div class="cd tm-sec"><div class="ct">الأساسيات</div>' + fld("اسم البطولة", inp("name", d.name, { ph: "مثال: كأس مركز الفانتازي" })) +
       '<div class="tm-f"><span>نوع البطولة</span><div class="sg">' + [["teams", "تيمات"], ["individual", "فردي"], ["both", "تيمات + فردي"]].map(function (x) { return '<button data-tm="mode" data-a="' + x[0] + '" class="' + (d.mode === x[0] ? "on" : "") + '">' + x[1] + "</button>"; }).join("") + "</div></div>" +
       '<div class="tm-hint">' + (d.mode === "teams" ? "المتسابقين تيمات، ونقاط التيم في الجولة زي ما هي في التطبيق." : d.mode === "individual" ? "المتسابقين أعضاء (أفراد)، كل واحد بنقاطه هو." : "التيمات هي اللي بتلعب المراحل، وفي نفس الوقت فيه ترتيب أفراد تلقائي لأعضاء التيمات المشاركة.") + "</div>";
@@ -641,7 +659,7 @@
       case "savekey": {
         var k = mval("#tmKey").trim(), msg = document.getElementById("tmMsg"); if (!k) { if (msg) msg.textContent = "اكتب المفتاح الأول"; return true; }
         if (msg) msg.textContent = "بيتأكد...";
-        checkKey(k).then(function (ok) { if (ok) { ST.key = k; ST.admin = true; LS.set("fc_key", k); closeModal(); F.toast("اتفعّل وضع الأدمن"); F.render(); } else if (msg) msg.textContent = "المفتاح غلط"; });
+        checkKeyR(k).then(function (r) { if (r && r.success) { ST.key = k; ST.admin = true; LS.set("fc_key", k); closeModal(); F.toast("اتفعّل وضع الأدمن"); F.render(); } else if (msg) msg.textContent = hint(r); });
         return true;
       }
       case "close": closeModal(); return true;
@@ -649,7 +667,29 @@
       case "edit": if (it) { ST.edit = cloneO(it.cfg); ST.edit.stages.forEach(function (s) { if (s.gws) s.gwsTxt = s.gws.join(","); }); ST.editId = it.id; F.render(); window.scrollTo(0, 0); } return true;
       case "cancel": ST.edit = null; ST.editId = null; F.render(); return true;
       case "dup": if (it) { var c = cloneO(it.cfg); c.name += " (نسخة)"; c.overrides = {}; c.adj = {}; post({ api: "tmSave", key: ST.key, cfg: c }).then(function (r) { F.toast((r && r.message) || "تعذّر النسخ"); if (r && r.success) loadList(); }).catch(function () { F.toast("فشل الاتصال بالسيرفر"); }); } return true;
-      case "del": if (it && confirm("تمسح بطولة \"" + it.cfg.name + "\" نهائي؟")) post({ api: "tmDelete", key: ST.key, id: it.id }).then(function (r) { F.toast((r && r.message) || "تعذّر المسح"); if (r && r.success) { ST.cur = null; loadList(); } }).catch(function () { F.toast("فشل الاتصال بالسيرفر"); }); return true;
+      case "delask": {
+        var dit = itemById(arg || ST.cur); if (!dit) return true;
+        ST.mod = { kind: "del", id: dit.id };
+        modal("<h3>مسح البطولة</h3><p>هتمسح \"" + esc(dit.cfg.name) + "\" نهائي بكل نتايجها وتعديلاتها. مينفعش ترجّعها بعد كده (لو عايز نسخة احتياطية اعمل \"نسخ\" الأول).</p>" +
+          '<div class="ab"><button class="btn b1" data-tm="delgo" data-a="' + esc(dit.id) + '" style="background:#ff3b5c;color:#fff">أيوه، امسحها</button><button class="btn b2" data-tm="close">لأ، سيبها</button></div>');
+        return true;
+      }
+      case "delgo": {
+        closeModal();
+        post({ api: "tmDelete", key: ST.key, id: arg }).then(function (r) {
+          F.toast((r && r.message) || hint(r));
+          if (r && r.success) { ST.cur = null; ST.edit = null; ST.editId = null; CC = {}; loadList(); }
+        }).catch(function () { F.toast("فشل الاتصال بالسيرفر"); });
+        return true;
+      }
+      case "ord": if (d) {
+        var pr = arg.split("|"), arr = (function () { var a2 = pr[0].split("."), c = d; for (var q = 0; q < a2.length; q++) { if (c[a2[q]] == null) c[a2[q]] = []; c = c[a2[q]]; } return c; })(), ix = Number(pr[2]);
+        if (pr[1] === "add") { if (arr.indexOf(pr[2]) < 0) arr.push(pr[2]); }
+        else if (pr[1] === "rm") arr.splice(ix, 1);
+        else if (pr[1] === "up" && ix > 0) { var x1 = arr[ix]; arr[ix] = arr[ix - 1]; arr[ix - 1] = x1; }
+        else if (pr[1] === "dn" && ix < arr.length - 1) { var x2 = arr[ix]; arr[ix] = arr[ix + 1]; arr[ix + 1] = x2; }
+        rerender();
+      } return true;
       case "redraw": if (it) { it.cfg.stages[Number(arg)].seedKey = Math.random().toString(36).slice(2, 8); persist(it, "اتعملت قرعة جديدة"); } return true;
       case "fx": { var res = it && result(it); if (res) fxModal(it, res, arg); return true; }
       case "tie": { var res2 = it && result(it); if (res2) tieModal(it, res2, arg); return true; }
