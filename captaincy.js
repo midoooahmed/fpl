@@ -8,6 +8,18 @@
   var ROOT = document.createElement("div"); ROOT.id = "capRoot";
   var ST = { info: null, err: "", loading: false, team: "", sel: {}, pwd: "", show: false, grp: "__all", sk: "team", sd: 1, admin: "", busy: false, off: 0, armed: false };
   var wasCap = false, tmr = 0;
+  /* بيفتكر آخر تيم وآخر مجموعة اتفتحت وآخر اختيارات كابتن (حتى لو لسه ماتأكدتش) */
+  try {
+    var _ui = JSON.parse(localStorage.getItem("fc_capui") || "null");
+    if (_ui) { if (_ui.team) ST.team = _ui.team; if (_ui.grp) ST.grp = _ui.grp; if (_ui.sk) ST.sk = _ui.sk; if (_ui.sd) ST.sd = _ui.sd; }
+  } catch (e) {}
+  function persistUI() {
+    try {
+      localStorage.setItem("fc_capui", JSON.stringify({ team: ST.team, grp: ST.grp, sk: ST.sk, sd: ST.sd }));
+      var gw = ST.info && ST.info.gw;
+      if (ST.team && gw) localStorage.setItem("fc_capdraft", JSON.stringify({ gw: gw, team: ST.team, sel: ST.sel }));
+    } catch (e) {}
+  }
   /* أعمدة لوحة الكباتن: تشيك بوكس لكل عمود، واختيارك بيتحفظ في الجهاز */
   var COLS = [{ k: "team", l: "التيم" }, { k: "contest", l: "المسابقة" }, { k: "cap", l: "الكابتن" }, { k: "time", l: "التوقيت" }];
   var CV = { team: 1, contest: 1, cap: 1, time: 1 };
@@ -194,12 +206,19 @@
       if (!r || r.success === false) { ST.err = (r && r.message) || "تعذّر تحميل الكبتنة"; if (!ST.info) draw(); return; }
       ST.err = ""; ST.info = r; ST.off = (r.now || Date.now()) - Date.now();
       if (ST.team && !teamsList().some(function (t) { return t === ST.team; })) ST.team = "";
+      if (ST.team && !Object.keys(ST.sel).length) seedSel();
       draw();
     }).catch(function () { ST.loading = false; if (!ST.info) { ST.err = "تعذّر الاتصال بالسيرفر"; draw(); } });
   }
   function seedSel() {
     ST.sel = {}; var P = pickMap();
     teamEls().forEach(function (e) { var p = P[e.team + "|" + e.contest]; if (p) ST.sel[e.contest] = String(p.entryId); });
+    try {
+      var d = JSON.parse(localStorage.getItem("fc_capdraft") || "null"), gw = ST.info && ST.info.gw;
+      if (d && gw && d.gw === gw && d.team === ST.team && d.sel) {
+        teamEls().forEach(function (e) { var v = d.sel[e.contest]; if (v && !P[e.team + "|" + e.contest] && (e.members || []).some(function (m) { return String(m.entryId) === String(v); })) ST.sel[e.contest] = String(v); });
+      }
+    } catch (x) {}
   }
   function ping() {
     try {
@@ -287,9 +306,9 @@
   /* ---------- الأحداث ---------- */
   ROOT.addEventListener("click", function (e) {
     var t = e.target, b;
-    if ((b = t.closest("[data-capc]"))) { ST.sel[b.getAttribute("data-capc")] = b.getAttribute("data-cape"); drawBlocks(); return; }
-    if ((b = t.closest("[data-capg]"))) { ST.grp = b.getAttribute("data-capg"); drawBoard(); return; }
-    if ((b = t.closest("[data-caps]"))) { var k = b.getAttribute("data-caps"); if (ST.sk === k) ST.sd = -ST.sd; else { ST.sk = k; ST.sd = 1; } drawBoard(); return; }
+    if ((b = t.closest("[data-capc]"))) { ST.sel[b.getAttribute("data-capc")] = b.getAttribute("data-cape"); persistUI(); drawBlocks(); return; }
+    if ((b = t.closest("[data-capg]"))) { ST.grp = b.getAttribute("data-capg"); persistUI(); drawBoard(); return; }
+    if ((b = t.closest("[data-caps]"))) { var k = b.getAttribute("data-caps"); if (ST.sk === k) ST.sd = -ST.sd; else { ST.sk = k; ST.sd = 1; } persistUI(); drawBoard(); return; }
     if (t.closest("[data-capeye]")) { ST.show = !ST.show; var pw = q("#capPwd"); if (pw) pw.type = ST.show ? "text" : "password"; var ey = t.closest("[data-capeye]"); ey.innerHTML = eyeSvg(ST.show); return; }
     if (t.closest("[data-capsave]")) { save(); return; }
     if ((b = t.closest("[data-capact]"))) { var a = b.getAttribute("data-capact"); if (a === "admin") adminOpen(); else if (a === "retry") { ST.err = ""; ST.info = null; load(); } return; }
@@ -306,8 +325,8 @@
     if (t.id === "capPwd") ST.pwd = t.value;
     else if (t.id === "capTeamIn") {
       var f = findTeam(t.value);
-      if (f && f !== ST.team) { ST.team = f; seedSel(); drawBlocks(); msg("", true); }
-      else if (!f && ST.team && !t.value.trim()) { ST.team = ""; ST.sel = {}; drawBlocks(); }
+      if (f && f !== ST.team) { ST.team = f; seedSel(); persistUI(); drawBlocks(); msg("", true); }
+      else if (!f && ST.team && !t.value.trim()) { ST.team = ""; ST.sel = {}; persistUI(); drawBlocks(); }
     }
   });
   ROOT.addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target.id === "capPwd") save(); });

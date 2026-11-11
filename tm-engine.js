@@ -42,6 +42,50 @@
   }
   function isLive(gws, ctx) { return !!(ctx.curLive && gws && gws.indexOf(ctx.cur) > -1); }
 
+  /* ---------- مواجهات الأعضاء (5 ضد 5): كل عضو في تيم بيلعب قصاد عضو في التيم التاني ---------- */
+  function mScoreOf(id, gws, ctx) {
+    if (!gws || !gws.length || !ctx.mscore) return null;
+    var s = 0;
+    for (var i = 0; i < gws.length; i++) { var v = ctx.mscore(id, gws[i]); if (v == null) return null; s += v; }
+    return r1(s);
+  }
+  function duelsOn(cfg, st) { var D = cfg.duels; return !!(D && D.on && !st.noDuels && cfg.mode !== "individual"); }
+  function duelPts(D, st, k) { return k === "w" ? (has(D.win) ? num(D.win) : winPts(st)) : k === "d" ? (has(D.draw) ? num(D.draw) : drawPts(st)) : (has(D.loss) ? num(D.loss) : lossPts(st)); }
+  function applyDuels(cfg, st, ctx, f) {
+    var D = cfg.duels;
+    if (!duelsOn(cfg, st) || !ctx.mem || f.bye || f.ov || !f.a || !f.b || f.a === "?" || f.b === "?") return;
+    var A = ctx.mem(f.a, D.pair), B = ctx.mem(f.b, D.pair), n = Math.min(num(D.n) > 0 ? num(D.n) : 1e9, A.length, B.length);
+    if (!n) return;
+    var pairs = [], wa = 0, wb = 0, dr = 0, all = true, mg = num(D.margin), i;
+    for (i = 0; i < n; i++) {
+      var sa = mScoreOf(A[i], f.gws, ctx), sb = mScoreOf(B[i], f.gws, ctx), res = null;
+      if (sa == null || sb == null) all = false;
+      else { var d = sa - sb; res = Math.abs(d) <= mg ? "d" : (d > 0 ? "a" : "b"); if (res === "a") wa++; else if (res === "b") wb++; else dr++; }
+      pairs.push({ a: A[i], b: B[i], sa: sa, sb: sb, res: res });
+    }
+    var dres = !all ? null : (wa > wb ? "a" : wb > wa ? "b" : "d");
+    var du = { pairs: pairs, n: n, wa: wa, wb: wb, d: dr, done: all, res: dres, pa: 0, pb: 0, mode: D.mode === "only" ? "only" : "add" };
+    if (all) {
+      var sc = D.score || "match", per = has(D.per) ? num(D.per) : 1, stl = has(D.steal) ? num(D.steal) : 1, df = wa - wb, dpt = has(D.draw) ? num(D.draw) : 0;
+      if (sc === "count" || sc === "count_steal") { du.pa = wa * per + dr * dpt; du.pb = wb * per + dr * dpt; }
+      if (sc === "steal" || sc === "count_steal") { du.pa += df * stl; du.pb -= df * stl; }
+      if (sc !== "count" && sc !== "steal" && sc !== "count_steal") {
+        du.pa = dres === "a" ? duelPts(D, st, "w") : dres === "b" ? duelPts(D, st, "l") : duelPts(D, st, "d");
+        du.pb = dres === "b" ? duelPts(D, st, "w") : dres === "a" ? duelPts(D, st, "l") : duelPts(D, st, "d");
+      }
+      du.pa = Math.round(du.pa * 10) / 10; du.pb = Math.round(du.pb * 10) / 10;
+    }
+    f.duel = du;
+    if (du.mode === "only") {
+      f.tsa = f.sa; f.tsb = f.sb; f.sa = all ? wa : null; f.sb = all ? wb : null; f.done = all; f.res = all ? dres : null; f.live = all && isLive(f.gws, ctx);
+    } else if (all) { f.xa = du.pa; f.xb = du.pb; }
+  }
+  function legPts(f, st, side) {
+    var p = 0, r = f.res;
+    if (r) p = r === "d" ? drawPts(st) : (r === side ? winPts(st) : lossPts(st));
+    return p + num(side === "a" ? f.xa : f.xb);
+  }
+
   function mkFix(cfg, st, ctx, key, a, b, gws, extra) {
     var f = { key: key, a: a, b: b, gws: gws || [], sa: null, sb: null, done: false, live: false, res: null, ov: false }, k;
     if (extra) for (k in extra) f[k] = extra[k];
@@ -55,6 +99,7 @@
       f.done = f.sa != null && f.sb != null; f.live = f.done && isLive(f.gws, ctx);
     }
     if (f.done && !f.res && f.sa != null && f.sb != null) { var d = f.sa - f.sb; f.res = Math.abs(d) <= num(st.margin) ? "d" : (d > 0 ? "a" : "b"); }
+    applyDuels(cfg, st, ctx, f);
     return f;
   }
 
@@ -74,6 +119,7 @@
       if (f.res === "a") { A.w++; B.l++; pa = winPts(st); pb = lossPts(st); A.form.push("w"); B.form.push("l"); }
       else if (f.res === "b") { B.w++; A.l++; pb = winPts(st); pa = lossPts(st); B.form.push("w"); A.form.push("l"); }
       else { A.d++; B.d++; pa = pb = drawPts(st); A.form.push("d"); B.form.push("d"); }
+      pa += num(f.xa); pb += num(f.xb);
       A.pts += pa; B.pts += pb;
       h2h[f.a + SEP + f.b] = num(h2h[f.a + SEP + f.b]) + pa; h2h[f.b + SEP + f.a] = num(h2h[f.b + SEP + f.a]) + pb;
     });
@@ -310,7 +356,11 @@
         var all = legFix.every(function (f) { return f.done; }), w = "", ov = cfg.overrides && cfg.overrides[t.key];
         if (all) {
           t.ta = r1(sum(legFix, function (f) { return f.sa == null ? 0 : f.sa; })); t.tb = r1(sum(legFix, function (f) { return f.sb == null ? 0 : f.sb; }));
-          if (t.ta > t.tb) w = a; else if (t.tb > t.ta) w = b; else { var tt = koTie(st, ctx, a, b, legFix, seedNo); w = tt.w; t.by = tt.by; }
+          var hasDu = duelsOn(cfg, st) && cfg.duels.mode !== "only" && legFix.some(function (f) { return f.duel && f.duel.done; });
+          var ca = hasDu ? sum(legFix, function (f) { return legPts(f, st, "a"); }) : 0, cb = hasDu ? sum(legFix, function (f) { return legPts(f, st, "b"); }) : 0;
+          t.ca = hasDu ? ca : null; t.cb = hasDu ? cb : null;
+          if (hasDu && ca !== cb) { w = ca > cb ? a : b; t.by = "نقاط المواجهة + مواجهات الأعضاء"; }
+          else if (t.ta > t.tb) w = a; else if (t.tb > t.ta) w = b; else { var tt = koTie(st, ctx, a, b, legFix, seedNo); w = tt.w; t.by = tt.by; }
         }
         if (ov && (ov.w === "a" || ov.w === "b")) { w = ov.w === "a" ? a : b; t.by = "تأهل بقرار الإدارة"; all = true; }
         if (all && w) {
