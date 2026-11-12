@@ -7,7 +7,7 @@
   "dir": "rtl",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone", "minimal-ui"],
-  "background_color": "#0B0F19",
+  "background_color": "#FFFFFF",
   "theme_color": "#0B0F19",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
