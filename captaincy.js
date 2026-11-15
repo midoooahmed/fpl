@@ -171,7 +171,7 @@
     var colsBar = '<div class="cp-cols"><span>الأعمدة:</span>' + COLS.map(function (c) {
       return '<label class="cp-ck"><input type="checkbox" data-capcol="' + c.k + '"' + (CV[c.k] ? " checked" : "") + "><span>" + c.l + "</span></label>";
     }).join("") + "</div>";
-    return colsBar + F.card("كباتن الجولة " + ST.info.gw,
+    return colsBar + '<div class="cp-cols" style="margin-top:6px"><button type="button" class="chip" data-capcopy>📋 نسخ اللوحة</button></div>' + F.card("كباتن الجولة " + ST.info.gw,
       '<div class="ct">لوحة الكباتن - الجولة ' + (ST.info.gw || "–") + '</div><div class="cp-tabs">' + tabs + "</div>" +
       '<div class="tbl-sc"><table class="mini-t cp-tb"><thead><tr><th>#</th>' + vis.map(function (c) { var sk = c.k === "time" ? "ts" : c.k; return '<th data-caps="' + sk + '">' + c.l + arr(sk) + "</th>"; }).join("") + "</tr></thead><tbody>" +
       (body || '<tr><td colspan="' + (vis.length + 1) + '" class="mut">مفيش نتايج</td></tr>') + "</tbody></table></div>", "plus ov-full");
@@ -281,13 +281,108 @@
     var I = ST.info || {};
     d.innerHTML = '<div class="tc"><h3>إدارة الكبتنة</h3><input class="cp-in" id="capKey" type="password" placeholder="مفتاح الأدمن (ADMIN_KEY)" value="' + esc(ST.admin) + '" autocomplete="off">' +
       '<div class="ab"><button class="btn b1" data-capadm="lock">' + (I.locked ? "فتح الكبتنة" : "قفل الكبتنة") + '</button><button class="btn b2" data-capadm="auto">' + (I.autoFrom > 0 ? "الكابتن التلقائي: شغال من ج" + I.autoFrom + " (اضغط للإيقاف)" : "الكابتن التلقائي: موقوف (اضغط للتشغيل)") + '</button><button class="btn b2" data-capadm="init">تجهيز الباسوردات (يملى الفاضي بأرقام عشوائية)</button>' +
-      '<button class="btn b2" data-capadm="clear" id="capClr">تصفير كباتن الجولة ' + (I.gw || "") + '</button><button class="btn b2" data-capadm="close">إغلاق</button></div><div id="capAdmMsg" class="cp-hint"></div></div>';
+      '<button class="btn b2" data-capadm="clear" id="capClr">تصفير كباتن الجولة ' + (I.gw || "") + '</button><button class="btn b1" data-capadm="bulk">📋 لصق كباتن (تسجيل بالجملة)</button><button class="btn b2" data-capadm="copy">نسخ لوحة الكباتن</button><button class="btn b2" data-capadm="close">إغلاق</button></div><div id="capAdmMsg" class="cp-hint"></div></div>';
     ST.armed = false;
   }
+
+  /* ---------- نسخ ولصق الكباتن (الأدمن) ---------- */
+  function boardText(tsv) {
+    var rows = boardRows();
+    return (tsv ? ["التيم\tالمسابقة\tالكابتن\tالوقت"] : []).concat(rows.map(function (r) {
+      return tsv ? [r.team, r.contest, r.cap || "", r.ts ? when(r.ts, r.time) : ""].join("\t") : r.team + (r.contest ? " (" + r.contest + ")" : "") + " - " + (r.cap || "لسه");
+    })).join("\n");
+  }
+  function copyText(txt, okMsg) {
+    var done = function () { F.toast(okMsg || "اتنسخ"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, function () { legacyCopy(txt); done(); });
+    else { legacyCopy(txt); done(); }
+  }
+  function legacyCopy(txt) { var a = document.createElement("textarea"); a.value = txt; a.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(a); a.select(); try { document.execCommand("copy"); } catch (e) {} a.remove(); }
+  function copyBoard() { if (!ST.info) return; copyText(boardText(true), "اتنسخت لوحة الكباتن (تلصقها في إكسيل/واتساب)"); }
+
+  function nz(s) {
+    return String(s == null ? "" : s).toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
+      .replace(/[^a-z0-9\u0600-\u06FF]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function pickOne(list, txt, key) {
+    var n = nz(txt); if (!n) return null;
+    var ex = list.filter(function (x) { return nz(key(x)) === n; });
+    if (ex.length === 1) return ex[0];
+    if (ex.length > 1) return null;
+    var part = list.filter(function (x) { var k = nz(key(x)); return k.indexOf(n) > -1 || (k && n.indexOf(k) > -1); });
+    return part.length === 1 ? part[0] : null;
+  }
+  function parseBulk(text) {
+    var info = ST.info || { teams: [] }, byTeam = {}, out = [];
+    (info.teams || []).forEach(function (e) { (byTeam[e.team] = byTeam[e.team] || []).push(e); });
+    var teamsL = Object.keys(byTeam);
+    String(text || "").split(/\r?\n/).forEach(function (raw) {
+      var line = raw.trim(); if (!line) return;
+      var parts = line.split(/\t+|\s*[|=:؛;→]+\s*|\s*->\s*|\s*[،,]\s*|\s+[-–—]+\s+/).map(function (x) { return x.trim(); }).filter(Boolean);
+      if (parts.length < 2) { out.push({ raw: line, err: "السطر محتاج: اسم التيم ثم اسم الكابتن" }); return; }
+      var team = pickOne(teamsL, parts[0], function (x) { return x; });
+      if (!team) { out.push({ raw: line, err: "التيم \"" + parts[0] + "\" مش لاقيه أو متكرر" }); return; }
+      var els = byTeam[team];
+      if (parts[2]) { var cf = els.filter(function (e) { return nz(e.contest).indexOf(nz(parts[2])) > -1; }); if (cf.length) els = cf; }
+      var picks = [], names = [];
+      els.forEach(function (e) {
+        var mem = e.members || [], m = null, who = parts[1];
+        if (/^\d+$/.test(who)) { m = mem.filter(function (x) { return String(x.entryId) === who; })[0] || (Number(who) >= 1 && Number(who) <= mem.length ? mem[Number(who) - 1] : null); }
+        if (!m) m = pickOne(mem, who, function (x) { return x.person; });
+        if (m) { picks.push({ contest: e.contest, entryId: String(m.entryId) }); names.push(m.person + (els.length > 1 && e.contest ? " (" + e.contest + ")" : "")); }
+      });
+      if (!picks.length) { out.push({ raw: line, team: team, err: "\"" + parts[1] + "\" مش عضو في " + team }); return; }
+      out.push({ raw: line, team: team, picks: picks, names: names });
+    });
+    return out;
+  }
+  function bulkOpen() {
+    var d = document.getElementById("capAdm"); if (!d) return;
+    var I = ST.info || {};
+    d.innerHTML = '<div class="tc"><h3>لصق كباتن الجولة ' + (I.gw || "") + '</h3><div class="cp-hint">الصق سطر لكل تيم: <b>اسم التيم - اسم الكابتن</b> (الفاصل: - أو : أو | أو تاب من إكسيل). لو التيم عنده أكتر من مسابقة اكتب اسم المسابقة كعمود تالت. الاسم ممكن يبقى جزء منه أو رقم الـ entry.</div>' +
+      '<textarea class="cp-in" id="capBulkTx" rows="8" placeholder="ذئاب الجبل - محمد أحمد&#10;النسور : علي" style="min-height:150px;resize:vertical;direction:rtl">' + esc(ST.bulkText || "") + '</textarea>' +
+      '<input class="cp-in" id="capKey" type="password" placeholder="مفتاح الأدمن (ADMIN_KEY)" value="' + esc(ST.admin) + '" autocomplete="off" style="margin-top:8px">' +
+      '<div class="ab"><button class="btn b2" data-capadm="bpreview">معاينة</button><button class="btn b1" data-capadm="bsave" id="capBSave" disabled>تسجيل الكل</button><button class="btn b2" data-capadm="bback">رجوع</button></div><div id="capBulkOut"></div><div id="capAdmMsg" class="cp-hint"></div></div>';
+    ST.bulkRows = null;
+  }
+  function bulkPreview() {
+    var tx = document.getElementById("capBulkTx"), out = document.getElementById("capBulkOut"), sv = document.getElementById("capBSave");
+    if (!tx || !out) return;
+    ST.bulkText = tx.value; var rows = parseBulk(tx.value); ST.bulkRows = rows;
+    var ok = rows.filter(function (r) { return r.picks; }).length;
+    out.innerHTML = rows.length ? '<div style="margin-top:10px;max-height:240px;overflow:auto;display:grid;gap:6px">' + rows.map(function (r) {
+      return '<div class="cp-msg ' + (r.picks ? "ok" : "no") + '" style="margin:0">' + (r.picks ? "✓ <b>" + esc(r.team) + "</b> ← " + esc(r.names.join("، ")) : "✗ " + esc(r.err) + "<br><small>" + esc(r.raw) + "</small>") + "</div>";
+    }).join("") + "</div>" : '<div class="cp-hint">مفيش سطور.</div>';
+    if (sv) { sv.disabled = !ok; sv.textContent = ok ? "تسجيل " + ok + " تيم" : "تسجيل الكل"; }
+  }
+  function bulkSave() {
+    var rows = (ST.bulkRows || []).filter(function (r) { return r.picks; }), key = (document.getElementById("capKey") || {}).value || ST.admin;
+    var msgEl = document.getElementById("capAdmMsg"), sv = document.getElementById("capBSave");
+    if (!rows.length) return;
+    if (!key) { if (msgEl) msgEl.textContent = "اكتب مفتاح الأدمن الأول"; return; }
+    ST.admin = key; if (sv) sv.disabled = true;
+    var i = 0, okN = 0, bad = [];
+    (function next() {
+      if (i >= rows.length) {
+        if (msgEl) msgEl.innerHTML = "اتسجّل " + okN + " من " + rows.length + (bad.length ? "<br>" + bad.map(function (b) { return "✗ " + esc(b); }).join("<br>") : "");
+        load(true).then(function () { drawBoard(); }); if (okN) ping(); return;
+      }
+      var r = rows[i++]; if (msgEl) msgEl.textContent = "بيسجّل " + i + " / " + rows.length + " ...";
+      F.api({ api: "capBulk", key: key, team: r.team, picks: JSON.stringify(r.picks) }).then(function (res) {
+        if (res && res.success) okN++; else bad.push(r.team + ": " + ((res && res.message) || "فشل"));
+      }).catch(function () { bad.push(r.team + ": فشل الاتصال"); }).then(next);
+    })();
+  }
+
   function adminRun(what) {
     var key = (document.getElementById("capKey") || {}).value || ST.admin; ST.admin = key;
     var out = document.getElementById("capAdmMsg"), I = ST.info || {};
     if (what === "close") { var d = document.getElementById("capAdm"); if (d) d.remove(); return; }
+    if (what === "copy") { copyBoard(); return; }
+    if (what === "bulk") { bulkOpen(); return; }
+    if (what === "bpreview") { bulkPreview(); return; }
+    if (what === "bsave") { bulkSave(); return; }
+    if (what === "bback") { adminOpen(); return; }
     if (!key) { if (out) out.textContent = "اكتب مفتاح الأدمن الأول"; return; }
     if (what === "clear" && !ST.armed) { ST.armed = true; var c = document.getElementById("capClr"); if (c) c.textContent = "اضغط تاني للتأكيد"; return; }
     var p = { key: key };
@@ -309,6 +404,7 @@
     if ((b = t.closest("[data-capc]"))) { ST.sel[b.getAttribute("data-capc")] = b.getAttribute("data-cape"); persistUI(); drawBlocks(); return; }
     if ((b = t.closest("[data-capg]"))) { ST.grp = b.getAttribute("data-capg"); persistUI(); drawBoard(); return; }
     if ((b = t.closest("[data-caps]"))) { var k = b.getAttribute("data-caps"); if (ST.sk === k) ST.sd = -ST.sd; else { ST.sk = k; ST.sd = 1; } persistUI(); drawBoard(); return; }
+    if (t.closest("[data-capcopy]")) { copyBoard(); return; }
     if (t.closest("[data-capeye]")) { ST.show = !ST.show; var pw = q("#capPwd"); if (pw) pw.type = ST.show ? "text" : "password"; var ey = t.closest("[data-capeye]"); ey.innerHTML = eyeSvg(ST.show); return; }
     if (t.closest("[data-capsave]")) { save(); return; }
     if ((b = t.closest("[data-capact]"))) { var a = b.getAttribute("data-capact"); if (a === "admin") adminOpen(); else if (a === "retry") { ST.err = ""; ST.info = null; load(); } return; }

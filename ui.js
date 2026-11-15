@@ -23,7 +23,9 @@
     pitch: { name: "ملعب فاتح", sub: "أخضر نضيف", mode: "light", acc: "#16A34A", sw: ["#F2F6F1", "#E9F1E8", "#22A35A"] }
   };
   function applySkin(k) { if (!SKINS[k]) k = "classic"; if (k === "classic") root.removeAttribute("data-skin"); else root.setAttribute("data-skin", k); }
-  applySkin(LS.get("fc_skin") || "classic");
+  /* الشكل الافتراضي: غروب متدرج (لأي حد لسه ما اختارش شكل بنفسه) */
+  var FIRST_SKIN = !LS.get("fc_skin");
+  applySkin(LS.get("fc_skin") || "sunset");
 
   function hex(c) { var m = /^#?([0-9a-f]{6})$/i.exec((c || "").trim()); if (!m) return null; var n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
   function nearestAccent(target) {
@@ -41,6 +43,14 @@
     var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(s);
     if (!m) return s;
     return "#" + [m[1], m[2], m[3]].map(function (x) { return ("0" + Number(x).toString(16)).slice(-2); }).join("");
+  }
+  function firstSkinSync() {
+    if (!FIRST_SKIN) return;
+    var sk = SKINS.sunset, a = nearestAccent(sk.acc), th = $("#th");
+    if (!a || !th) return;
+    FIRST_SKIN = false; LS.set("fc_skin", "sunset");
+    if (S.theme !== sk.mode) th.click();
+    if (S.acc !== a.getAttribute("data-acc")) a.click();
   }
   function chooseSkin(k) {
     var sk = SKINS[k]; if (!sk) return;
@@ -196,9 +206,10 @@
     var L = Object.keys(T).map(function (k) { return { t: k, v: T[k] }; }).sort(function (a, b) { return b.v - a.v; });
     if (!L.length) return;
     var gap = L.length > 1 ? L[0].v - L[1].v : 0;
-    var html = '<div class="cd hero" id="vhero"><div class="k">الجولة ' + (S.gw || "–") + (S.D.live ? " · لايف" : "") + ' · صدارة التيمات</div>' +
-      '<div class="hr"><b class="hn">' + esc(L[0].t) + '</b><b class="n hb">' + L[0].v + '</b></div>' +
-      (L.length > 1 ? '<span class="hg">+' + gap + ' على ' + esc(L[1].t) + '</span>' : '') + '</div>';
+    var r1 = function (x) { return Math.round(x * 10) / 10; };
+    var html = '<div class="cd hero" id="vhero" data-t="صدارة الجولة">' + (F.cam ? F.cam("صدارة الجولة") : "") + '<div class="k">الجولة ' + (S.gw || "–") + (S.D.live ? " · لايف" : "") + ' · صدارة التيمات' + (cap ? " (كابتن التيم حسب المسابقة)" : "") + '</div>' +
+      '<div class="hr"><b class="hn" data-act="t" data-arg="' + esc(L[0].t) + '" style="cursor:pointer">' + esc(L[0].t) + '</b><b class="n hb">' + r1(L[0].v) + '</b></div>' +
+      (L.length > 1 ? '<span class="hg">+' + r1(gap) + ' على ' + esc(L[1].t) + '</span>' : '') + '</div>';
     v.insertAdjacentHTML("afterbegin", html);
   }
   function num(x) { return Number(x) || 0; }
@@ -260,7 +271,7 @@
     F.push("كل الأقسام", h, "launcher");
   }
   function openSkins() {
-    var cur = LS.get("fc_skin") || "classic";
+    var cur = LS.get("fc_skin") || "sunset";
     var h = '<p class="mut" style="margin:6px 4px 0">اختار الشكل اللي يريحك. الدارك واللايت والألوان لسه شغالين من القايمة.</p>';
     Object.keys(SKINS).forEach(function (k) {
       var s = SKINS[k];
@@ -331,6 +342,7 @@
   var _ra = R.afterRender;
   R.afterRender = function () {
     if (_ra) _ra();
+    firstSkinSync();
     var ns = $("#drawer .ns");
     if (ns && !$("#skn")) ns.insertAdjacentHTML("beforeend", '<button class="tl" id="skn">' + svg("brush", 20) + ' الشكل (نيون، ذهبي، غروب...)</button><button class="tl" id="tourb">' + svg("help", 20) + " جولة سريعة في التطبيق</button>");
     var dr = $("#drawer");

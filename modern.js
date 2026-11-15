@@ -38,7 +38,7 @@
     '#pmModal{position:fixed;inset:0;z-index:97;display:grid;place-items:center;padding:16px;background:rgba(4,6,12,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}',
     '#pmModal .pc{width:min(440px,100%);max-height:88vh;overflow-y:auto;padding:18px;border-radius:22px;background:var(--s1);border:1px solid var(--ln);box-shadow:0 24px 60px rgba(0,0,0,.4)}',
     '#pmModal h3{margin:0 0 4px;font-size:17px}#pmModal p{margin:0 0 10px;color:var(--mu);font-size:12.5px;line-height:1.7}',
-    '.pm-r{display:grid;grid-template-columns:1fr 64px 64px;gap:6px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--ln);font-size:13px}.pm-r.h{font-size:11.5px;color:var(--mu);font-weight:600}.pm-r span:not(:first-child){text-align:center}',
+    '.pm-r{display:grid;grid-template-columns:1fr 46px 46px 46px;gap:6px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--ln);font-size:13px}.pm-r.h{font-size:11.5px;color:var(--mu);font-weight:600}.pm-r span:not(:first-child){text-align:center}',
     '.pm-r label{display:grid;place-items:center}'
   ].join("\n");
   var st = document.createElement("style"); st.id = "modernCss"; st.textContent = css; document.head.appendChild(st);
@@ -92,10 +92,13 @@
   }
 
   /* ---------- صلاحيات التبويبات ---------- */
+  /* أزرار القايمة الجانبية (الأدوات) اللي ينفع تتخفي برضو */
+  var TOOLS = { fltd: "الفلاتر", syn: "تحديث الأعضاء من الليغات", lnk: "نسخ رابط بالفلاتر", aut: "تحديث لايف تلقائي", skn: "الشكل (نيون، ذهبي، غروب)", tourb: "جولة سريعة في التطبيق", profb: "بروفايلي", fsTgl: "ملء الشاشة" };
   var PERM = {}; try { PERM = JSON.parse(LS.get("fc_perm") || "{}") || {}; } catch (e) { PERM = {}; }
   function allowed(tab) {
-    if (!tab || tab === "overview" || ADMIN) return true;
+    if (!tab || tab === "overview") return true;
     var p = PERM[tab]; if (!p) return true;
+    if (ADMIN) return p.a !== 0;
     return prof() ? p.m !== 0 : p.v !== 0;
   }
   function loadPerm() {
@@ -103,33 +106,43 @@
       if (r && r.success && r.perms) { PERM = r.perms; LS.set("fc_perm", JSON.stringify(PERM)); apply(); }
     }).catch(function () {});
   }
+  var KNOWN = {}; try { KNOWN = JSON.parse(LS.get("fc_permtabs") || "{}") || {}; } catch (e) { KNOWN = {}; }
+  function rememberTabs() {
+    var ch = false;
+    $$("#drawer [data-tab]").forEach(function (b) {
+      var id = b.getAttribute("data-tab"); if (id === "overview" || KNOWN[id]) return;
+      var w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT, null), n, nm = id; while ((n = w.nextNode())) { var tx = n.textContent.trim(); if (tx) { nm = tx; break; } }
+      KNOWN[id] = nm; ch = true;
+    });
+    if (ch) LS.set("fc_permtabs", JSON.stringify(KNOWN));
+  }
   function apply() {
+    rememberTabs();
     if (!allowed(S.tab)) { F.toast("التبويب ده مقفول دلوقتي"); F.setTab("overview"); return; }
     $$("#drawer [data-tab]").forEach(function (b) { if (!allowed(b.getAttribute("data-tab"))) b.remove(); });
     $$("[data-ltab]").forEach(function (b) { if (!allowed(b.getAttribute("data-ltab"))) b.remove(); });
+    $$("#drawer .tl[id]").forEach(function (b) { if (b.id !== "pmOpen" && TOOLS[b.id] && !allowed("tool:" + b.id)) b.remove(); });
     var ns = $("#drawer .ns");
-    if (ns && ADMIN && !$("#pmOpen")) { var bt = document.createElement("button"); bt.className = "tl"; bt.id = "pmOpen"; bt.textContent = "🔒 صلاحيات التبويبات (أعضاء / زوار)"; ns.appendChild(bt); }
-    if (ns && !$("#fsTgl") && document.fullscreenEnabled) { var f = document.createElement("button"); f.className = "tl"; f.id = "fsTgl"; f.textContent = "⛶ ملء الشاشة"; ns.appendChild(f); }
+    if (ns && ADMIN && !$("#pmOpen")) { var bt = document.createElement("button"); bt.className = "tl"; bt.id = "pmOpen"; bt.textContent = "🔒 صلاحيات الظهور (أعضاء / زوار / أدمن)"; ns.appendChild(bt); }
+    if (ns && !$("#fsTgl") && document.fullscreenEnabled && allowed("tool:fsTgl")) { var f = document.createElement("button"); f.className = "tl"; f.id = "fsTgl"; f.textContent = "⛶ ملء الشاشة"; ns.appendChild(f); }
   }
   new MutationObserver(function () { $$("[data-ltab]").forEach(function (b) { if (!allowed(b.getAttribute("data-ltab"))) b.remove(); }); }).observe(document.body, { childList: true, subtree: true });
 
   function permModal() {
-    var tabs = [], seen = {};
-    $$("#drawer [data-tab]").forEach(function (b) {
-      var id = b.getAttribute("data-tab"); if (seen[id] || id === "overview") return; seen[id] = 1;
-      var w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT, null), n, nm = id; while ((n = w.nextNode())) { var tx = n.textContent.trim(); if (tx) { nm = tx; break; } }
-      tabs.push({ id: id, name: nm });
-    });
+    rememberTabs();
+    var tabs = Object.keys(KNOWN).map(function (id) { return { id: id, name: KNOWN[id] }; });
     var d = document.createElement("div"); d.id = "pmModal";
-    d.innerHTML = '<div class="pc"><h3>صلاحيات التبويبات</h3><p>علّم على اللي يقدر يفتح كل تبويب. «عضو» = اللي دخل بالبروفايل بتاعه، «زائر» = اللي برا البوابة من غير بروفايل. الأدمن بيفتح كله دايمًا.</p><div class="pm-r h"><span>التبويب</span><span>عضو</span><span>زائر</span></div>' +
-      tabs.map(function (t) { var p = PERM[t.id] || {}; return '<div class="pm-r"><span>' + esc(t.name) + '</span><label><input type="checkbox" data-pm="' + esc(t.id) + '|m"' + (p.m !== 0 ? " checked" : "") + '></label><label><input type="checkbox" data-pm="' + esc(t.id) + '|v"' + (p.v !== 0 ? " checked" : "") + "></label></div>"; }).join("") +
+    var tools = Object.keys(TOOLS).map(function (k) { return { id: "tool:" + k, name: TOOLS[k] }; });
+    function row(t) { var p = PERM[t.id] || {}; return '<div class="pm-r"><span>' + esc(t.name) + "</span>" + ["m", "v", "a"].map(function (k) { return '<label><input type="checkbox" data-pm="' + esc(t.id) + "|" + k + '"' + (p[k] !== 0 ? " checked" : "") + "></label>"; }).join("") + "</div>"; }
+    d.innerHTML = '<div class="pc"><h3>صلاحيات الظهور</h3><p>علّم على اللي يظهر لكل فئة. «عضو» = اللي دخل بالبروفايل، «زائر» = اللي برا البوابة من غير بروفايل، «أدمن» = ظهوره في قايمتك انت (لو شلته بيتخفي عنك كمان، ودايمًا تقدر ترجعه من هنا). لإخفاء حاجة عن المستخدمين العاديين بس: شيل علامة عضو وزائر وسيب أدمن.</p><div class="pm-r h"><span>التبويبات</span><span>عضو</span><span>زائر</span><span>أدمن</span></div>' +
+      tabs.map(row).join("") + '<div class="pm-r h" style="margin-top:8px"><span>أدوات القايمة</span><span></span><span></span><span></span></div>' + tools.map(row).join("") +
       '<div style="display:grid;gap:8px;margin-top:14px"><button class="btn b1" id="pmSave">حفظ</button><button class="btn b2" id="pmClose">إلغاء</button></div><p id="pmMsg" style="margin:10px 0 0"></p></div>';
     document.body.appendChild(d);
   }
   function permSave() {
     var out = {}, msg = $("#pmMsg");
-    $$("#pmModal [data-pm]").forEach(function (c) { var a = c.getAttribute("data-pm").split("|"); out[a[0]] = out[a[0]] || { m: 1, v: 1 }; out[a[0]][a[1]] = c.checked ? 1 : 0; });
-    Object.keys(out).forEach(function (k) { if (out[k].m === 1 && out[k].v === 1) delete out[k]; });
+    $$("#pmModal [data-pm]").forEach(function (c) { var a = c.getAttribute("data-pm").split("|"); out[a[0]] = out[a[0]] || { m: 1, v: 1, a: 1 }; out[a[0]][a[1]] = c.checked ? 1 : 0; });
+    Object.keys(out).forEach(function (k) { if (out[k].m === 1 && out[k].v === 1 && out[k].a === 1) delete out[k]; });
     if (msg) msg.textContent = "بيحفظ...";
     fetch(F.CFG.API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ api: "permSave", key: adminKey(), perms: out }) }).then(function (r) { return r.json(); }).then(function (r) {
       if (r && r.success) { PERM = out; LS.set("fc_perm", JSON.stringify(PERM)); var m = $("#pmModal"); if (m) m.remove(); F.toast("اتحفظت الصلاحيات"); F.render(); }

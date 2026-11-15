@@ -22,6 +22,8 @@
   function pow2(n) { var s = 1; while (s < n) s *= 2; return s; }
   function bracketOrder(S) { var p = [1]; while (p.length < S) { var L = p.length * 2, n = []; p.forEach(function (x) { n.push(x, L + 1 - x); }); p = n; } return p; }
   function gprOf(st) { return Math.max(1, num(st.gpr) || 1); }
+  /* mpg = عدد المواجهات اللي التيم بيلعبها في نفس الجولة (الجولة بتاخد mpg دور من نظام المرحلة): دوري/مجموعات = ماتشات تانية في نفس الجولة، سويسري = أدوار متتالية، إقصائيات = أدوار (أو ماتشات ذهاب/إياب) متتالية */
+  function mpgOf(st) { return Math.max(1, Math.floor(num(st.mpg)) || 1); }
   function winPts(st) { return has(st.win) ? num(st.win) : 3; }
   function drawPts(st) { return has(st.draw_pts) ? num(st.draw_pts) : 1; }
   function lossPts(st) { return has(st.loss) ? num(st.loss) : 0; }
@@ -42,6 +44,50 @@
   }
   function isLive(gws, ctx) { return !!(ctx.curLive && gws && gws.indexOf(ctx.cur) > -1); }
 
+  /* ---------- مواجهات الأعضاء (5 ضد 5): كل عضو في تيم بيلعب قصاد عضو في التيم التاني ---------- */
+  function mScoreOf(id, gws, ctx) {
+    if (!gws || !gws.length || !ctx.mscore) return null;
+    var s = 0;
+    for (var i = 0; i < gws.length; i++) { var v = ctx.mscore(id, gws[i]); if (v == null) return null; s += v; }
+    return r1(s);
+  }
+  function duelsOn(cfg, st) { var D = cfg.duels; return !!(D && D.on && !st.noDuels && cfg.mode !== "individual"); }
+  function duelPts(D, st, k) { return k === "w" ? (has(D.win) ? num(D.win) : winPts(st)) : k === "d" ? (has(D.draw) ? num(D.draw) : drawPts(st)) : (has(D.loss) ? num(D.loss) : lossPts(st)); }
+  function applyDuels(cfg, st, ctx, f) {
+    var D = cfg.duels;
+    if (!duelsOn(cfg, st) || !ctx.mem || f.bye || f.ov || !f.a || !f.b || f.a === "?" || f.b === "?") return;
+    var A = ctx.mem(f.a, D.pair), B = ctx.mem(f.b, D.pair), n = Math.min(num(D.n) > 0 ? num(D.n) : 1e9, A.length, B.length);
+    if (!n) return;
+    var pairs = [], wa = 0, wb = 0, dr = 0, all = true, mg = num(D.margin), i;
+    for (i = 0; i < n; i++) {
+      var sa = mScoreOf(A[i], f.gws, ctx), sb = mScoreOf(B[i], f.gws, ctx), res = null;
+      if (sa == null || sb == null) all = false;
+      else { var d = sa - sb; res = Math.abs(d) <= mg ? "d" : (d > 0 ? "a" : "b"); if (res === "a") wa++; else if (res === "b") wb++; else dr++; }
+      pairs.push({ a: A[i], b: B[i], sa: sa, sb: sb, res: res });
+    }
+    var dres = !all ? null : (wa > wb ? "a" : wb > wa ? "b" : "d");
+    var du = { pairs: pairs, n: n, wa: wa, wb: wb, d: dr, done: all, res: dres, pa: 0, pb: 0, mode: D.mode === "only" ? "only" : "add" };
+    if (all) {
+      var sc = D.score || "match", per = has(D.per) ? num(D.per) : 1, stl = has(D.steal) ? num(D.steal) : 1, df = wa - wb, dpt = has(D.draw) ? num(D.draw) : 0;
+      if (sc === "count" || sc === "count_steal") { du.pa = wa * per + dr * dpt; du.pb = wb * per + dr * dpt; }
+      if (sc === "steal" || sc === "count_steal") { du.pa += df * stl; du.pb -= df * stl; }
+      if (sc !== "count" && sc !== "steal" && sc !== "count_steal") {
+        du.pa = dres === "a" ? duelPts(D, st, "w") : dres === "b" ? duelPts(D, st, "l") : duelPts(D, st, "d");
+        du.pb = dres === "b" ? duelPts(D, st, "w") : dres === "a" ? duelPts(D, st, "l") : duelPts(D, st, "d");
+      }
+      du.pa = Math.round(du.pa * 10) / 10; du.pb = Math.round(du.pb * 10) / 10;
+    }
+    f.duel = du;
+    if (du.mode === "only") {
+      f.tsa = f.sa; f.tsb = f.sb; f.sa = all ? wa : null; f.sb = all ? wb : null; f.done = all; f.res = all ? dres : null; f.live = all && isLive(f.gws, ctx);
+    } else if (all) { f.xa = du.pa; f.xb = du.pb; }
+  }
+  function legPts(f, st, side) {
+    var p = 0, r = f.res;
+    if (r) p = r === "d" ? drawPts(st) : (r === side ? winPts(st) : lossPts(st));
+    return p + num(side === "a" ? f.xa : f.xb);
+  }
+
   function mkFix(cfg, st, ctx, key, a, b, gws, extra) {
     var f = { key: key, a: a, b: b, gws: gws || [], sa: null, sb: null, done: false, live: false, res: null, ov: false }, k;
     if (extra) for (k in extra) f[k] = extra[k];
@@ -55,6 +101,7 @@
       f.done = f.sa != null && f.sb != null; f.live = f.done && isLive(f.gws, ctx);
     }
     if (f.done && !f.res && f.sa != null && f.sb != null) { var d = f.sa - f.sb; f.res = Math.abs(d) <= num(st.margin) ? "d" : (d > 0 ? "a" : "b"); }
+    applyDuels(cfg, st, ctx, f);
     return f;
   }
 
@@ -74,6 +121,7 @@
       if (f.res === "a") { A.w++; B.l++; pa = winPts(st); pb = lossPts(st); A.form.push("w"); B.form.push("l"); }
       else if (f.res === "b") { B.w++; A.l++; pb = winPts(st); pa = lossPts(st); B.form.push("w"); A.form.push("l"); }
       else { A.d++; B.d++; pa = pb = drawPts(st); A.form.push("d"); B.form.push("d"); }
+      pa += num(f.xa); pb += num(f.xb);
       A.pts += pa; B.pts += pb;
       h2h[f.a + SEP + f.b] = num(h2h[f.a + SEP + f.b]) + pa; h2h[f.b + SEP + f.a] = num(h2h[f.b + SEP + f.a]) + pb;
     });
@@ -207,17 +255,20 @@
       R.groups = groups.map(function (ids, i) { return { name: "المجموعة " + (GL[i] || i + 1), ids: ids, rows: [], fixtures: [] }; });
     } else groups = [seeded];
     var per = groups.map(function (ids) { var rr = roundRobin(ids), all = rr.slice(); if (legs === 2) rr.forEach(function (r) { all.push(r.map(function (p) { return [p[1], p[0]]; })); }); return all; });
-    var maxR = per.reduce(function (m, x) { return Math.max(m, x.length); }, 0), all = [];
-    for (var r = 0; r < maxR; r++) {
-      var gws = slotGws(st, r), fx = [];
-      groups.forEach(function (ids, g) {
-        (per[g][r] || []).forEach(function (p, k) {
-          var f = mkFix(cfg, st, ctx, st.id + "|g" + g + "|r" + (r + 1) + "|" + k, p[0], p[1], gws, { grp: g, rnd: r + 1 });
-          fx.push(f); all.push(f);
-          if (R.groups) R.groups[g].fixtures.push(f);
+    var maxR = per.reduce(function (m, x) { return Math.max(m, x.length); }, 0), all = [], mpg = mpgOf(st), nSl = Math.ceil(maxR / mpg);
+    for (var sl = 0; sl < nSl; sl++) {
+      var gws = slotGws(st, sl), fx = [];
+      for (var q = 0; q < mpg; q++) {
+        var r = sl * mpg + q; if (r >= maxR) break;
+        groups.forEach(function (ids, g) {
+          (per[g][r] || []).forEach(function (p, k) {
+            var f = mkFix(cfg, st, ctx, st.id + "|g" + g + "|r" + (r + 1) + "|" + k, p[0], p[1], gws, { grp: g, rnd: r + 1, sub: q + 1, mpg: mpg });
+            fx.push(f); all.push(f);
+            if (R.groups) R.groups[g].fixtures.push(f);
+          });
         });
-      });
-      R.rounds.push({ no: r + 1, gws: gws, fixtures: fx });
+      }
+      R.rounds.push({ no: sl + 1, gws: gws, fixtures: fx, mpg: mpg });
     }
     if (st.type === "groups") {
       R.groups.forEach(function (G, g) { G.rows = tableOf(cfg, st, ctx, G.ids, G.fixtures, seedNo, base); });
@@ -234,9 +285,9 @@
   }
 
   function buildSwiss(cfg, st, R, seeded, ctx, seedNo, base) {
-    var n = seeded.length, RN = Math.max(1, num(st.rounds) || Math.ceil(Math.log2(Math.max(2, n)))), played = {}, all = [], hadBye = {}, stop = false;
+    var n = seeded.length, RN = Math.max(1, num(st.rounds) || Math.ceil(Math.log2(Math.max(2, n)))), played = {}, all = [], hadBye = {}, stop = false, mpg = mpgOf(st);
     for (var r = 0; r < RN; r++) {
-      var gws = slotGws(st, r), fx = [];
+      var gws = slotGws(st, Math.floor(r / mpg)), fx = [];
       if (!stop && r > 0) { var prev = R.rounds[r - 1]; if (!prev.fixtures.length || !prev.fixtures.every(function (f) { return f.done; })) stop = true; }
       if (!stop && n >= 2) {
         var order = r === 0 ? seeded.slice() : tableOf(cfg, st, ctx, seeded, all, seedNo, base).map(function (x) { return x.id; }), pairs = [], bye = null, k;
@@ -254,10 +305,10 @@
             var b = rem.splice(bi, 1)[0]; pairs.push([a, b]);
           }
         }
-        pairs.forEach(function (p, i) { played[p[0] + SEP + p[1]] = played[p[1] + SEP + p[0]] = 1; var f = mkFix(cfg, st, ctx, st.id + "|r" + (r + 1) + "|" + i, p[0], p[1], gws, { rnd: r + 1 }); fx.push(f); all.push(f); });
+        pairs.forEach(function (p, i) { played[p[0] + SEP + p[1]] = played[p[1] + SEP + p[0]] = 1; var f = mkFix(cfg, st, ctx, st.id + "|r" + (r + 1) + "|" + i, p[0], p[1], gws, { rnd: r + 1, sub: r % mpg + 1, mpg: mpg }); fx.push(f); all.push(f); });
         if (bye != null) { hadBye[bye] = 1; var bf = { key: st.id + "|r" + (r + 1) + "|bye", a: bye, b: null, bye: true, gws: gws, done: true, res: "a", sa: null, sb: null, rnd: r + 1 }; fx.push(bf); all.push(bf); }
       }
-      R.rounds.push({ no: r + 1, gws: gws, fixtures: fx, pending: stop });
+      R.rounds.push({ no: r + 1, gws: gws, fixtures: fx, pending: stop, mpg: mpg });
     }
     var rows = tableOf(cfg, st, ctx, seeded, all, seedNo, base);
     R.tables = [{ name: "", rows: rows }]; R.order = rows.map(function (x) { return x.id; }); R.ptsMap = {}; rows.forEach(function (x) { R.ptsMap[x.id] = x.pts; });
@@ -282,7 +333,7 @@
   }
 
   function buildKO(cfg, st, R, seeded, ctx, seedNo) {
-    var N = seeded.length, i, r;
+    var N = seeded.length, i, r, mpg = mpgOf(st);
     R.bracket = { rounds: [], third: null }; R.koLosers = {};
     if (N < 2) { R.order = seeded.slice(); R.complete = N === 1 && !R.tentative; return; }
     var S = pow2(N), RN = Math.round(Math.log2(S)), leaves = [];
@@ -305,12 +356,16 @@
         if (a === "" || b === "") { t.bye = true; t.winner = a === "" ? b : a; t.done = t.winner !== "?"; next.push(t.winner); continue; }
         if (a === "?" || b === "?") { next.push("?"); continue; }
         var legFix = [];
-        for (var l = 0; l < legs; l++) legFix.push(mkFix(cfg, st, ctx, t.key + "|L" + (l + 1), a, b, slotGws(st, slot + l), { leg: l + 1, rnd: r }));
+        for (var l = 0; l < legs; l++) legFix.push(mkFix(cfg, st, ctx, t.key + "|L" + (l + 1), a, b, slotGws(st, Math.floor((slot + l) / mpg)), { leg: l + 1, rnd: r, mpg: mpg }));
         t.legs = legFix; t.live = legFix.some(function (f) { return f.live; });
         var all = legFix.every(function (f) { return f.done; }), w = "", ov = cfg.overrides && cfg.overrides[t.key];
         if (all) {
           t.ta = r1(sum(legFix, function (f) { return f.sa == null ? 0 : f.sa; })); t.tb = r1(sum(legFix, function (f) { return f.sb == null ? 0 : f.sb; }));
-          if (t.ta > t.tb) w = a; else if (t.tb > t.ta) w = b; else { var tt = koTie(st, ctx, a, b, legFix, seedNo); w = tt.w; t.by = tt.by; }
+          var hasDu = duelsOn(cfg, st) && cfg.duels.mode !== "only" && legFix.some(function (f) { return f.duel && f.duel.done; });
+          var ca = hasDu ? sum(legFix, function (f) { return legPts(f, st, "a"); }) : 0, cb = hasDu ? sum(legFix, function (f) { return legPts(f, st, "b"); }) : 0;
+          t.ca = hasDu ? ca : null; t.cb = hasDu ? cb : null;
+          if (hasDu && ca !== cb) { w = ca > cb ? a : b; t.by = "نقاط المواجهة + مواجهات الأعضاء"; }
+          else if (t.ta > t.tb) w = a; else if (t.tb > t.ta) w = b; else { var tt = koTie(st, ctx, a, b, legFix, seedNo); w = tt.w; t.by = tt.by; }
         }
         if (ov && (ov.w === "a" || ov.w === "b")) { w = ov.w === "a" ? a : b; t.by = "تأهل بقرار الإدارة"; all = true; }
         if (all && w) {
@@ -319,9 +374,9 @@
         } else next.push("?");
       }
       ties.forEach(function (t) { flat.push(t); });
-      R.bracket.rounds.push({ no: r, name: roundName(r, RN), ties: ties, gws: slotGws(st, slot) });
+      R.bracket.rounds.push({ no: r, name: roundName(r, RN), ties: ties, gws: slotGws(st, Math.floor(slot / mpg)), mpg: mpg });
       var fx = []; ties.forEach(function (t) { t.legs.forEach(function (f) { fx.push(f); }); });
-      R.rounds.push({ no: r, name: roundName(r, RN), gws: slotGws(st, slot), fixtures: fx });
+      R.rounds.push({ no: r, name: roundName(r, RN), gws: slotGws(st, Math.floor(slot / mpg)), fixtures: fx, mpg: mpg });
       slot += legs; cur = next;
     }
     champ = cur[0];
@@ -333,7 +388,7 @@
       semis.forEach(function (t) { if (t.done && !t.bye) lo2.push(t.winner === t.a ? t.b : t.a); else lo2.push("?"); });
       var T = { key: st.id + "|third", a: lo2[0], b: lo2[1], legs: [], bye: false, winner: "", by: "", ta: null, tb: null, done: false, live: false, third: true };
       if (lo2[0] && lo2[1] && lo2[0] !== "?" && lo2[1] !== "?") {
-        var tf = mkFix(cfg, st, ctx, T.key + "|L1", T.a, T.b, slotGws(st, finalSlot), { leg: 1, rnd: RN, third: true });
+        var tf = mkFix(cfg, st, ctx, T.key + "|L1", T.a, T.b, slotGws(st, Math.floor(finalSlot / mpg)), { leg: 1, rnd: RN, third: true, mpg: mpg });
         T.legs = [tf]; T.live = tf.live;
         if (tf.done) {
           T.ta = tf.sa; T.tb = tf.sb; var w3 = "";
@@ -410,13 +465,13 @@
   /* عدد الجولات اللي المرحلة هتاخدها (لترتيب بداية المراحل ورا بعض) */
   function slotsNeeded(st, n) {
     n = Math.max(2, n || 2);
-    var legs = num(st.legs) === 2 ? 2 : 1;
-    if (st.type === "league") return (n % 2 ? n : n - 1) * legs;
-    if (st.type === "groups") { var sz = Math.ceil(n / Math.max(1, num(st.groups) || 2)); return Math.max(1, (sz % 2 ? sz : sz - 1)) * legs; }
-    if (st.type === "swiss") return Math.max(1, num(st.rounds) || Math.ceil(Math.log2(n)));
-    if (st.type === "knockout") { var RN = Math.round(Math.log2(pow2(n))); return Math.max(0, RN - 1) * (num(st.koLegs) === 2 ? 2 : 1) + (num(st.finalLegs) === 2 ? 2 : 1); }
-    if (st.type === "ranking") return Math.max(1, (num(st.endGw) - num(st.startGw) + 1) || 1);
-    return 1;
+    var legs = num(st.legs) === 2 ? 2 : 1, mp = mpgOf(st), units = 1;
+    if (st.type === "league") units = (n % 2 ? n : n - 1) * legs;
+    else if (st.type === "groups") { var sz = Math.ceil(n / Math.max(1, num(st.groups) || 2)); units = Math.max(1, (sz % 2 ? sz : sz - 1)) * legs; }
+    else if (st.type === "swiss") units = Math.max(1, num(st.rounds) || Math.ceil(Math.log2(n)));
+    else if (st.type === "knockout") { var RN = Math.round(Math.log2(pow2(n))); units = Math.max(0, RN - 1) * (num(st.koLegs) === 2 ? 2 : 1) + (num(st.finalLegs) === 2 ? 2 : 1); }
+    else if (st.type === "ranking") return Math.max(1, (num(st.endGw) - num(st.startGw) + 1) || 1);
+    return Math.max(1, Math.ceil(units / mp));
   }
   function gwsNeeded(st, n) { return st.type === "ranking" ? slotsNeeded(st, n) : slotsNeeded(st, n) * gprOf(st); }
 

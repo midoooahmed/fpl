@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B0F19">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="preload" as="image" href="logo.png">
@@ -214,7 +217,7 @@ table.gt{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}.memc{padding:13px 14px;cursor:pointer}.memc .h{display:flex;align-items:center;gap:10px;margin-bottom:8px}.memc .nn{display:flex;justify-content:space-between;font-size:.74rem;color:var(--mu);margin-top:4px}.memc .nn strong{font-weight:600;color:var(--tx)}
 .pgs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;align-items:center}.pchip{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;max-width:270px;padding:6px 8px 6px 14px;border-radius:99px;border:1.5px solid var(--ln);background:var(--s1);color:var(--mu);font-size:.8rem;font-weight:500;cursor:pointer}.pchip.on{background:var(--ac);color:#0B0F19;border-color:transparent}.pchip .pt2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}.pchip button{border:0;background:rgba(128,128,128,.22);color:inherit;width:20px;height:20px;border-radius:50%;font-size:12px;line-height:1;padding:0}
 .padd{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--ac);background:var(--s1);color:var(--act);font-size:20px;padding:0}
-.shotw.wide{width:max-content;max-width:none}.shotw.wide .tw{overflow:visible;max-height:none}
+.shotw.wide{width:max-content;max-width:none}.shotw.wide .tw{overflow:visible;max-height:none}.shotw.wide .tbl-sc,.shotw.wide .tm-br,.shotw .tm-rd{overflow:visible!important;max-height:none!important}.shotw *{animation:none!important;transition:none!important}
 @media(max-width:640px){.vsr{grid-template-columns:1fr}.vsc{margin:-4px auto}}
 
 /* ===== شاشة الدخول (اللوجو) ===== */
@@ -354,7 +357,6 @@ function vOverview(){
   var bestT=null;if(live)wm.forEach(function(m){m.transfers.forEach(function(x){var g=num(pPts(x[0]))-num(pPts(x[1]));if(!bestT||g>bestT.g)bestT={m:m,i:x[0],o:x[1],g:g}})});
   var ev=S.D.event||{},world=ev.avg?'<small><span class="'+(avg>=ev.avg?"up":"dn")+' n">'+sgn(r1(avg-ev.avg))+"</span> عن العالم</small>":"<small>"+wm.length+" عضو</small>";
   var h="";
-  h+=card("صدارة الجولة",'<div class="k">صدارة الجولة'+(S.F.capTeam?" (كابتن التيم حسب المسابقة)":"")+'</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><b style="font-size:22px;font-weight:600"'+act("t",lead.team)+">"+esc(lead.team)+"</b>"+(sec?'<span class="chip ac">+<span class="n">'+(lead.net-sec.net)+"</span> على "+esc(sec.team)+"</span>":"")+'</div><div class="big n">'+lead.net+"</div>");
   h+='<div class="sec">أرقام سريعة</div><div class="g2">'+
    '<div class="cd t"><div class="k">متوسط النقاط</div><b class="n">'+avg+"</b>"+world+"</div>"+
    '<div class="cd t"><div class="k">لسه هيلعبوا</div><b class="n">'+(live?left:"-")+"</b><small>"+(live?"لاعب أساسي":"دوس تحديث اللايف")+"</small></div>"+
@@ -368,9 +370,11 @@ function vOverview(){
   h+='<div class="sec">تشكيلات الجولة (أفضل وأسوأ 15)</div>'+card("أفضل 15 عضو",'<div class="k" style="margin-bottom:10px">أفضل 15 عضو</div>'+mp(false))+card("أسوأ 15 عضو",'<div class="k" style="margin-bottom:10px">أسوأ 15 عضو</div>'+mp(true))+card("أفضل 15 تيم",'<div class="k" style="margin-bottom:10px">أفضل 15 تيم</div>'+tp(false))+card("أسوأ 15 تيم",'<div class="k" style="margin-bottom:10px">أسوأ 15 تيم</div>'+tp(true));
   if(live){
     h+='<div class="sec">مكسب التحويلات للتيمات</div>'+card("مكسب التحويلات",T.slice().sort(function(a,b){return b.gain-a.gain}).map(function(R){return'<div class="row act"'+act("t",R.team)+'><div class="grow"><b>'+esc(R.team)+"</b><small>"+R.n+" أعضاء"+(R.chipN&&!S.F.trChip?" - "+R.chipN+" بخاصية (مش محسوبين)":"")+'</small></div><b class="n '+(R.gain>0?"up":R.gain<0?"dn":"")+'">'+sgn(R.gain)+"</b></div>"}).join("")+'<div class="k" style="margin-top:8px">مكسب التحويلة = نقاط اللي اتشتروا ناقص اللي اتباعوا. أصحاب الوايلد والفري هيت بيتشالوا إلا لو فعّلت "ضم أصحاب الخواص" من الفلاتر.</div>');
+  }
+  {
     var best=function(f,low){var b=null,bv=null;wm.forEach(function(m){var v=f(m);if(v==null)return;if(bv==null||(low?v<bv:v>bv)){bv=v;b=m}});return b?{m:b,v:bv}:null};
-    var aw=[["الريادي",best(function(m){return m.d.net}),function(v){return v}],["الكابتن الذهبي",best(function(m){return m.d.eff?num(m.d.eff.pts):null}),function(v){return v}],["الكابتن الأنحس",best(function(m){return m.d.eff?num(m.d.eff.pts):null},true),function(v){return v}],["الدكة السودا",best(function(m){return m.d.benchPts>0?m.d.benchPts:null}),function(v){return v}],["الهيت الغالي",best(function(m){return m.cost>0?m.cost:null}),function(v){return"-"+v}]].filter(function(x){return x[1]});
-    h+='<div class="sec">جوايز الجولة</div><div class="aw">'+aw.map(function(x){return'<div class="cd act"'+act("m",x[1].m.uid)+'><div class="k">'+x[0]+'</div><b class="n" style="font-size:22px">'+x[2](x[1].v)+'</b><small class="mut" style="display:block">'+esc(x[1].m.person)+" - "+esc(x[1].m.team)+"</small></div>"}).join("")+"</div>"}
+    var aw=[["الريادي",best(function(m){return m.d.net}),function(v){return v}],["الكابتن الذهبي",best(function(m){return live&&m.d.eff?num(m.d.eff.pts):null}),function(v){return v}],["الكابتن الأنحس",best(function(m){return live&&m.d.eff?num(m.d.eff.pts):null},true),function(v){return v}],["الدكة السودا",best(function(m){return m.d.benchPts>0?m.d.benchPts:null}),function(v){return v}],["الهيت الغالي",best(function(m){return m.cost>0?m.cost:null}),function(v){return"-"+v}]].filter(function(x){return x[1]});
+    if(aw.length)h+='<div class="sec">جوايز الجولة</div><div class="aw">'+aw.map(function(x){return'<div class="cd act"'+act("m",x[1].m.uid)+'><div class="k">'+x[0]+'</div><b class="n" style="font-size:22px">'+x[2](x[1].v)+'</b><small class="mut" style="display:block">'+esc(x[1].m.person)+" - "+esc(x[1].m.team)+"</small></div>"}).join("")+"</div>"}
   return h+(R.overviewExtra?R.overviewExtra():"")}
 
 function sortBar(key,opts){return'<div class="sec" style="margin-top:12px"><span>ترتيب حسب</span></div><div class="chips">'+opts.map(function(o){return'<button data-sort="'+key+":"+o[0]+'" class="'+(S.sort[key]===o[0]?"on":"")+'">'+o[1]+"</button>"}).join("")+"</div>"}
@@ -491,24 +495,74 @@ function prepImgs(root){
   return Promise.race([all,new Promise(function(r){setTimeout(r,12000)})])}
 function addCams(){
   $$("#view .sec").forEach(function(h){if(h.querySelector(".scam"))return;h.insertAdjacentHTML("beforeend",'<button type="button" class="scam" data-seccam aria-label="تصوير القسم">'+ic("cam",16)+"</button>")})}
+/* html2canvas 1.4.1 بيفشل لما المتصفح يرجّع ألوان حديثة (color-mix / color(srgb ...) / oklch) -
+   فبنحوّلها لـ rgba صريحة جوه نسخة التصوير قبل ما نصوّر. ده كان سبب إن زراير التصوير مابتشتغلش في البطولات وغيرها */
+var H2C_URLS=["https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js","https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js","https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"],H2C_P=null;
+function ensureH2C(){
+  if(window.html2canvas)return Promise.resolve(true);
+  if(H2C_P)return H2C_P;
+  H2C_P=new Promise(function(ok){
+    var i=0,next=function(){
+      if(window.html2canvas)return ok(true);
+      if(i>=H2C_URLS.length){H2C_P=null;return ok(false)}
+      var s=document.createElement("script");s.src=H2C_URLS[i++];s.onload=function(){ok(!!window.html2canvas)};s.onerror=function(){next()};document.head.appendChild(s)};
+    next()});
+  return H2C_P}
+function fixColor(v){
+  if(!v||v.indexOf("(")<0)return v;
+  return v.replace(/color\(\s*(?:srgb|display-p3|srgb-linear)\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s+([\d.eE+-]+)(?:\s*\/\s*([\d.eE+-]+%?))?\s*\)/g,function(m,r,g,b,a){
+    var c=function(x){return Math.max(0,Math.min(255,Math.round(parseFloat(x)*255)))},al=a==null?1:(String(a).slice(-1)==="%"?parseFloat(a)/100:parseFloat(a));
+    return"rgba("+c(r)+","+c(g)+","+c(b)+","+(isNaN(al)?1:Math.round(al*1000)/1000)+")"})}
+var CPROPS=["color","background-color","background-image","border-top-color","border-right-color","border-bottom-color","border-left-color","outline-color","text-decoration-color","box-shadow","text-shadow","fill","stroke","caret-color","column-rule-color"];
+function sanitizeColors(root){
+  var els=[root].concat($$("*",root)),bad=/color\(|color-mix|oklch|oklab|lab\(|lch\(/;
+  els.forEach(function(el){
+    var cs;try{cs=getComputedStyle(el)}catch(e){return}
+    CPROPS.forEach(function(p){
+      var v=cs.getPropertyValue(p);
+      if(v&&bad.test(v)){var nv=fixColor(v);if(bad.test(nv))nv=p.indexOf("image")>-1||p==="box-shadow"||p==="text-shadow"?"none":"transparent";el.style.setProperty(p,nv,"important")}
+    });
+    /* هوامش الـ backdrop-filter مابتتصورش فبنشيلها من النسخة */
+    el.style.setProperty("backdrop-filter","none","important");el.style.setProperty("-webkit-backdrop-filter","none","important");
+  })}
 function capture(el,title){
-  if(!window.html2canvas){toast("مكتبة الصور لسه ماتحمّلتش");return}
+  if(!el){toast("مفيش حاجة تتصور هنا");return}
   $("#md").innerHTML='<div class="mh">صورة<button class="ib f" id="mx" aria-label="قفل">'+ic("close")+'</button></div><div class="pv" id="pv"><span class="mut">بيجهّز الصورة...</span></div><div class="sg" id="fm"><button class="on" data-f="n">عادي</button><button data-f="s">ستوري</button></div><div class="tg"><span>عنوان فوق الصورة</span><button class="sw on" id="tt" aria-label="عنوان"></button></div><div class="tg"><span>خلفية بيضاء</span><button class="sw" id="wb" aria-label="خلفية بيضاء"></button></div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px"><button class="btn b1" id="dl">تحميل الصورة</button><button class="btn b2" id="shr">مشاركة</button></div>';
   $("#modal").classList.add("show");
-  var url=null,st={f:"n",t:true,w:false};
+  var url=null,st={f:"n",t:true,w:false},seq=0;
+  var fail=function(msg){$("#pv").innerHTML='<span class="mut">'+esc(msg||"تعذّر إنشاء الصورة")+'<br><button class="btn b2" id="rtry" style="margin-top:10px">حاول تاني</button></span>';var r=$("#rtry");if(r)r.onclick=function(){run()}};
   var run=function(){
-    var w=document.createElement("div");w.className="shotw"+(st.f==="s"?" story":"")+((el.matches&&el.matches(".tw"))||el.querySelector("table.gt")?" wide":"");
-    if(st.w){w.setAttribute("data-theme","light");w.style.cssText+="background:#fff;color:#101626"}else w.setAttribute("data-theme",S.theme);
-    w.innerHTML=(st.t?"<h2>"+esc(title)+"</h2>":"")+el.outerHTML+'<div class="ft2"><span>مركز الفانتازي - الجولة '+S.gw+"</span><span>"+new Date().toLocaleString("ar-EG")+"</span></div>";
-    $$(".cam,.ib,.scam",w).forEach(function(x){x.remove()});document.body.appendChild(w);
-    var bg=getComputedStyle(w).backgroundColor;
-    prepImgs(w).then(function(){return window.html2canvas(w,{scale:2,useCORS:true,backgroundColor:bg,imageTimeout:15000})}).then(function(c){url=c.toDataURL("image/png");$("#pv").innerHTML='<img alt="معاينة" src="'+url+'">'}).catch(function(){$("#pv").innerHTML='<span class="mut">تعذّر إنشاء الصورة</span>'}).then(function(){w.remove()})};
-  $("#mx").onclick=function(){$("#modal").classList.remove("show")};
+    var my=++seq;url=null;$("#pv").innerHTML='<span class="mut">بيجهّز الصورة...</span>';
+    ensureH2C().then(function(ok){
+      if(!ok){fail("مكتبة الصور ماتحمّلتش - اتأكد من النت وحاول تاني");return}
+      if(my!==seq)return;
+      var w=document.createElement("div"),wide=(el.matches&&el.matches(".tw,.tm-br"))||!!el.querySelector("table.gt,table.tm-st,table.mini-t,.tw,.tm-br");
+      w.className="shotw"+(st.f==="s"?" story":"")+(wide?" wide":"");
+      if(st.w){w.setAttribute("data-theme","light");w.style.cssText+="background:#fff;color:#101626"}else w.setAttribute("data-theme",S.theme);
+      w.innerHTML=(st.t?"<h2>"+esc(title)+"</h2>":"")+el.outerHTML+'<div class="ft2"><span>مركز الفانتازي - الجولة '+S.gw+"</span><span>"+new Date().toLocaleString("ar-EG")+"</span></div>";
+      $$(".cam,.ib,.scam,.tm-cam,[data-noshot]",w).forEach(function(x){x.remove()});
+      $$("[hidden]",w).forEach(function(x){x.remove()});
+      $$("script,iframe,video",w).forEach(function(x){x.remove()});
+      $$("details",w).forEach(function(d){d.setAttribute("open","")});
+      document.body.appendChild(w);
+      var done=function(){w.remove()};
+      prepImgs(w).then(function(){
+        sanitizeColors(w);
+        var bg=getComputedStyle(w).backgroundColor;if(/color\(|color-mix/.test(bg))bg=st.w?"#ffffff":(S.theme==="dark"?"#0B0F19":"#F3F5FA");
+        var wd=w.scrollWidth||520,ht=w.scrollHeight||800,sc=Math.min(2,Math.sqrt(12e6/Math.max(1,wd*ht)),4000/Math.max(wd,ht));
+        sc=Math.max(0.5,Math.round(sc*100)/100);
+        return window.html2canvas(w,{scale:sc,useCORS:true,allowTaint:false,logging:false,backgroundColor:bg,imageTimeout:15000,scrollX:0,scrollY:0,windowWidth:Math.max(document.documentElement.clientWidth,wd),windowHeight:Math.max(window.innerHeight,ht)})})
+      .then(function(c){
+        if(my!==seq)return;
+        url=c.toDataURL("image/png");$("#pv").innerHTML='<img alt="معاينة" src="'+url+'">'})
+      .catch(function(err){try{console.error("capture failed",err)}catch(e){}if(my===seq)fail("تعذّر إنشاء الصورة"+(err&&err.message?" ("+String(err.message).slice(0,80)+")":""))})
+      .then(done,done)})};
+  $("#mx").onclick=function(){seq++;$("#modal").classList.remove("show")};
   $("#fm").onclick=function(e){var b=e.target.closest("button");if(!b)return;st.f=b.getAttribute("data-f");$$("#fm button").forEach(function(x){x.classList.toggle("on",x===b)});run()};
   $("#tt").onclick=function(e){st.t=!st.t;e.currentTarget.classList.toggle("on",st.t);run()};
   $("#wb").onclick=function(e){st.w=!st.w;e.currentTarget.classList.toggle("on",st.w);run()};
-  $("#dl").onclick=function(){if(!url)return;var a=document.createElement("a");a.href=url;a.download=("فانتازي-ج"+S.gw+"-"+title).replace(/[\\/:*?"<>|]/g,"")+".png";document.body.appendChild(a);a.click();a.remove()};
-  $("#shr").onclick=function(){if(!url)return;fetch(url).then(function(r){return r.blob()}).then(function(b){var f=new File([b],"fantasy.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f],title:title});toast("المشاركة المباشرة مش متاحة - حمّل الصورة")}).catch(function(){})};
+  $("#dl").onclick=function(){if(!url){toast("استنى الصورة تجهز");return}var a=document.createElement("a");a.href=url;a.download=("فانتازي-ج"+S.gw+"-"+title).replace(/[\\/:*?"<>|]/g,"")+".png";document.body.appendChild(a);a.click();a.remove()};
+  $("#shr").onclick=function(){if(!url){toast("استنى الصورة تجهز");return}fetch(url).then(function(r){return r.blob()}).then(function(b){var f=new File([b],"fantasy.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f],title:title});toast("المشاركة المباشرة مش متاحة - حمّل الصورة")}).catch(function(){})};
   run()}
 
 /* ===== الهيدر والقائمة والرسم ===== */
@@ -612,6 +666,7 @@ window.__fc={R:R,S:S,P:P,pPts:pPts,pStat:pStat,isPlayed:isPlayed,esc:esc,num:num
 <script src="tables.js"></script>
 <script src="compare.js"></script>
 <script src="welcome.js"></script>
+<script src="modern.js"></script>
 <script src="captaincy.js"></script>
 <script src="nowroo.js"></script>
 <script src="tm-engine.js"></script>
