@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B0F19">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="preload" as="image" href="logo.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>مركز الفانتازي</title>
+<title>GOT Fantasy</title>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--r:16px;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);--ng:#FF8A6B}
@@ -491,71 +494,24 @@ function prepImgs(root){
   return Promise.race([all,new Promise(function(r){setTimeout(r,12000)})])}
 function addCams(){
   $$("#view .sec").forEach(function(h){if(h.querySelector(".scam"))return;h.insertAdjacentHTML("beforeend",'<button type="button" class="scam" data-seccam aria-label="تصوير القسم">'+ic("cam",16)+"</button>")})}
-/* html2canvas 1.4.1 مابيفهمش ألوان color-mix / color() / lab / oklch (المتصفح بيرجّعها كده من getComputedStyle)
-   وأول لون من النوع ده بيوقّع التصوير كله. الحل: وقت التصوير بس بنلفّ getComputedStyle وبنحوّل الألوان دي لـ rgba. */
-var COLFN=/\b(?:color|lab|lch|oklab|oklch|hwb)\([^()]*\)/g,COLTEST=/\b(?:color|lab|lch|oklab|oklch|hwb)\(/,CXC=null;
-function colRgba(s){
-  var m=/^color\(\s*srgb\s+([\d.eE+-]+%?)\s+([\d.eE+-]+%?)\s+([\d.eE+-]+%?)(?:\s*\/\s*([\d.eE+-]+%?))?\s*\)$/.exec(s);
-  if(m){
-    var c=[m[1],m[2],m[3]].map(function(v){var n=parseFloat(v);if(/%$/.test(v))n/=100;return Math.round(Math.max(0,Math.min(1,n))*255)});
-    var a=m[4]==null?1:(/%$/.test(m[4])?parseFloat(m[4])/100:parseFloat(m[4]));
-    return"rgba("+c.join(",")+","+(Math.round(Math.max(0,Math.min(1,a))*1000)/1000)+")"}
-  try{
-    if(!CXC){var cv=document.createElement("canvas");cv.width=cv.height=1;CXC=cv.getContext("2d",{willReadFrequently:true})}
-    CXC.clearRect(0,0,1,1);CXC.fillStyle="rgba(0,0,0,0)";CXC.fillStyle=s;CXC.fillRect(0,0,1,1);
-    var d=CXC.getImageData(0,0,1,1).data;return"rgba("+d[0]+","+d[1]+","+d[2]+","+Math.round(d[3]/255*1000)/1000+")"}
-  catch(e){return"transparent"}}
-function colFix(v){return typeof v==="string"&&COLTEST.test(v)?v.replace(COLFN,colRgba):v}
-function gcsWrap(win,orig){
-  return function(el,ps){
-    var cs=orig.call(win,el,ps);
-    return new Proxy(cs,{get:function(t,k){
-      if(k==="getPropertyValue")return function(p){return colFix(t.getPropertyValue(p))};
-      var v=t[k];if(typeof v==="function")return v.bind(t);
-      return colFix(v)}})}}
-var GCS0=null,GCSN=0;
-function gcsOn(){if(GCSN++===0){GCS0=window.getComputedStyle;window.getComputedStyle=gcsWrap(window,GCS0)}}
-function gcsOff(){if(--GCSN<=0){GCSN=0;if(GCS0){window.getComputedStyle=GCS0;GCS0=null}}}
-/* تحميل مكتبة التصوير: لو الـ CDN الأساسي وقع بنجرّب التاني والتالت */
-var H2C=null;
-function loadH2C(){
-  if(window.html2canvas)return Promise.resolve(true);
-  if(H2C)return H2C;
-  var srcs=["https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js","https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js","https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"];
-  H2C=srcs.reduce(function(p,u){return p.then(function(ok){
-    if(ok||window.html2canvas)return true;
-    return new Promise(function(res){var sc=document.createElement("script");sc.src=u;sc.onload=function(){res(!!window.html2canvas)};sc.onerror=function(){sc.remove();res(false)};document.head.appendChild(sc)})})},Promise.resolve(false))
-  .then(function(ok){if(!ok)H2C=null;return ok});
-  return H2C}
 function capture(el,title){
+  if(!window.html2canvas){toast("مكتبة الصور لسه ماتحمّلتش");return}
   $("#md").innerHTML='<div class="mh">صورة<button class="ib f" id="mx" aria-label="قفل">'+ic("close")+'</button></div><div class="pv" id="pv"><span class="mut">بيجهّز الصورة...</span></div><div class="sg" id="fm"><button class="on" data-f="n">عادي</button><button data-f="s">ستوري</button></div><div class="tg"><span>عنوان فوق الصورة</span><button class="sw on" id="tt" aria-label="عنوان"></button></div><div class="tg"><span>خلفية بيضاء</span><button class="sw" id="wb" aria-label="خلفية بيضاء"></button></div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px"><button class="btn b1" id="dl">تحميل الصورة</button><button class="btn b2" id="shr">مشاركة</button></div>';
   $("#modal").classList.add("show");
-  var url=null,st={f:"n",t:true,w:false},seq=0;
-  var fail=function(msg){$("#pv").innerHTML='<span class="mut">تعذّر إنشاء الصورة'+(msg?'<br><small style="opacity:.7;direction:ltr;display:inline-block;margin-top:6px">'+esc(String(msg).slice(0,140))+'</small>':"")+'</span><br><button class="btn b2" id="rty" style="margin-top:10px">حاول تاني</button>'};
+  var url=null,st={f:"n",t:true,w:false};
   var run=function(){
-    var my=++seq;url=null;$("#pv").innerHTML='<span class="mut">بيجهّز الصورة...</span>';
     var w=document.createElement("div");w.className="shotw"+(st.f==="s"?" story":"")+((el.matches&&el.matches(".tw"))||el.querySelector("table.gt")?" wide":"");
     if(st.w){w.setAttribute("data-theme","light");w.style.cssText+="background:#fff;color:#101626"}else w.setAttribute("data-theme",S.theme);
     w.innerHTML=(st.t?"<h2>"+esc(title)+"</h2>":"")+el.outerHTML+'<div class="ft2"><span>مركز الفانتازي - الجولة '+S.gw+"</span><span>"+new Date().toLocaleString("ar-EG")+"</span></div>";
-    $$(".cam,.ib,.scam",w).forEach(function(x){x.remove()});
-    $$("details",w).forEach(function(d){d.setAttribute("open","")});
-    document.body.appendChild(w);
-    var bg=getComputedStyle(w).backgroundColor,on=false;
-    loadH2C().then(function(ok){
-      if(!ok)throw new Error("مكتبة التصوير ماتحمّلتش - اتأكد من النت");
-      return prepImgs(w)}).then(function(){
-      gcsOn();on=true;
-      return window.html2canvas(w,{scale:2,useCORS:true,backgroundColor:bg,imageTimeout:15000,logging:false,onclone:function(doc){try{var dw=doc.defaultView;if(dw&&dw.getComputedStyle&&dw!==window)dw.getComputedStyle=gcsWrap(dw,dw.getComputedStyle)}catch(e){}}})})
-    .then(function(c){if(my!==seq)return;url=c.toDataURL("image/png");$("#pv").innerHTML='<img alt="معاينة" src="'+url+'">'})
-    .catch(function(err){if(my!==seq)return;try{console.error("capture failed",err)}catch(e){}fail(err&&(err.message||err))})
-    .then(function(){if(on)gcsOff();w.remove()})};
-  $("#mx").onclick=function(){seq++;$("#modal").classList.remove("show")};
-  $("#pv").onclick=function(e){if(e.target.closest&&e.target.closest("#rty"))run()};
+    $$(".cam,.ib,.scam",w).forEach(function(x){x.remove()});document.body.appendChild(w);
+    var bg=getComputedStyle(w).backgroundColor;
+    prepImgs(w).then(function(){return window.html2canvas(w,{scale:2,useCORS:true,backgroundColor:bg,imageTimeout:15000})}).then(function(c){url=c.toDataURL("image/png");$("#pv").innerHTML='<img alt="معاينة" src="'+url+'">'}).catch(function(){$("#pv").innerHTML='<span class="mut">تعذّر إنشاء الصورة</span>'}).then(function(){w.remove()})};
+  $("#mx").onclick=function(){$("#modal").classList.remove("show")};
   $("#fm").onclick=function(e){var b=e.target.closest("button");if(!b)return;st.f=b.getAttribute("data-f");$$("#fm button").forEach(function(x){x.classList.toggle("on",x===b)});run()};
   $("#tt").onclick=function(e){st.t=!st.t;e.currentTarget.classList.toggle("on",st.t);run()};
   $("#wb").onclick=function(e){st.w=!st.w;e.currentTarget.classList.toggle("on",st.w);run()};
-  $("#dl").onclick=function(){if(!url){toast("الصورة لسه بتتجهّز");return}var a=document.createElement("a");a.href=url;a.download=("فانتازي-ج"+S.gw+"-"+title).replace(/[\\/:*?"<>|]/g,"")+".png";document.body.appendChild(a);a.click();a.remove()};
-  $("#shr").onclick=function(){if(!url){toast("الصورة لسه بتتجهّز");return}fetch(url).then(function(r){return r.blob()}).then(function(b){var f=new File([b],"fantasy.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f],title:title});toast("المشاركة المباشرة مش متاحة - حمّل الصورة")}).catch(function(){})};
+  $("#dl").onclick=function(){if(!url)return;var a=document.createElement("a");a.href=url;a.download=("فانتازي-ج"+S.gw+"-"+title).replace(/[\\/:*?"<>|]/g,"")+".png";document.body.appendChild(a);a.click();a.remove()};
+  $("#shr").onclick=function(){if(!url)return;fetch(url).then(function(r){return r.blob()}).then(function(b){var f=new File([b],"fantasy.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f],title:title});toast("المشاركة المباشرة مش متاحة - حمّل الصورة")}).catch(function(){})};
   run()}
 
 /* ===== الهيدر والقائمة والرسم ===== */
@@ -659,6 +615,7 @@ window.__fc={R:R,S:S,P:P,pPts:pPts,pStat:pStat,isPlayed:isPlayed,esc:esc,num:num
 <script src="tables.js"></script>
 <script src="compare.js"></script>
 <script src="welcome.js"></script>
+<script src="modern.js"></script>
 <script src="captaincy.js"></script>
 <script src="nowroo.js"></script>
 <script src="tm-engine.js"></script>
