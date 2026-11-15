@@ -732,7 +732,7 @@
       case "duelback": ST.duel = null; F.render(); return true;
       case "cmpback": {
         ST.duel = null; ST.cmpForce = false;
-        if (S.tab === "tmcmp") { var sv0 = savedCmp(); if (sv0) { ST.cur = sv0.id; ST.cmp = null; saveUI(); } F.setTab("tournaments"); return true; }
+        if (S.tab === "tmcmp") { var sv0 = savedCmp(); if (sv0) { ST.cur = sv0.id; ST.cmp = null; saveUI(); } F.setTab("tournaments", true); return true; }
         ST.cmp = null; F.render(); return true;
       }
       case "refresh": ST.tries = 0; loadList(); return true;
@@ -1072,7 +1072,7 @@
   window.__tmNav = {
     back: function () {
       if ((S.tab === "tmcmp" || S.tab === "tournaments") && ST.duel) { ST.duel = null; F.render(); return true; }
-      if (S.tab === "tmcmp") { F.setTab("tournaments"); var sv = savedCmp(); if (sv) { ST.cur = sv.id; ST.cmp = null; saveUI(); F.render(); } return true; }
+      if (S.tab === "tmcmp") { F.setTab("tournaments", true); var sv = savedCmp(); if (sv) { ST.cur = sv.id; ST.cmp = null; saveUI(); F.render(); } return true; }
       if (S.tab !== "tournaments") return false;
       if (ST.edit) { if (confirm("تخرج من غير ما تحفظ التعديلات؟")) { ST.edit = null; ST.editId = null; F.render(); } return true; }
       if (ST.cmp) { ST.cmp = null; F.render(); return true; }

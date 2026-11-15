@@ -192,9 +192,13 @@
     for (var i = 0; i < reg.length; i++) { try { if (reg[i]()) return true; } catch (e) {} }
     if (S.stack && S.stack.length) { F.pop(); return true; }
     if (window.__tmNav && window.__tmNav.back()) return true;
-    if (S.tab !== "overview") { F.setTab("overview"); return true; }
+    if (F.backTab && F.backTab()) return true;
+    if (S.tab !== "overview") { F.setTab("overview", true); return true; }
     return false;
   }
+  /* المتصفح بيتجاهل إدخالات الهيستوري اللي مش جاية من لمسة، فبنتأكد إن فيه "حارس" فوق الهيستوري بعد أي لمسة */
+  function arm() { try { if (!history.state || history.state.fc !== 1) history.pushState(guard, ""); } catch (e) {} }
+  ["pointerup", "touchend", "click"].forEach(function (ev) { document.addEventListener(ev, arm, true); });
   window.addEventListener("popstate", function () {
     if (window.__fcGate) { try { history.pushState(guard, ""); } catch (e) {} return; }
     if (closeTop()) { try { history.pushState(guard, ""); } catch (e) {} }

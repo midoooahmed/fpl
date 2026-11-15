@@ -317,8 +317,11 @@
     var y0 = null, dy = 0, busy = false;
     function ok(t) { return !t.closest(".tbl-sc,.tw,.sg,.chips,.pgs,input,textarea") && !$("#sheet.show") && !document.body.classList.contains("dro") && (window.scrollY || document.documentElement.scrollTop) <= 0; }
     document.addEventListener("touchstart", function (e) { y0 = (!busy && ok(e.target)) ? e.touches[0].clientY : null; dy = 0; }, { passive: true });
+    function reset() { y0 = null; dy = 0; if (!busy) { p.style.opacity = 0; p.style.transform = ""; } }
+    document.addEventListener("touchcancel", reset, { passive: true });
     document.addEventListener("touchmove", function (e) {
       if (y0 == null) return;
+      if ((window.scrollY || document.documentElement.scrollTop) > 0) { reset(); return; }
       dy = e.touches[0].clientY - y0;
       if (dy <= 0) { p.style.opacity = 0; return; }
       var k = Math.min(dy, 110);
