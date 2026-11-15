@@ -169,6 +169,7 @@ body.dro #drawer{transform:none}body.dro #scrim{opacity:1;pointer-events:auto}
 .ct{font-size:14px;font-weight:600;margin:0 40px 10px 0}.sub-h{font-size:12.5px;font-weight:500;color:var(--mu);margin:10px 2px 2px}
 .tile{background:var(--s2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}.tile span{font-size:12px;color:var(--mu)}.tile b{font-size:20px;font-weight:600}.tile small em{font-style:normal}
 .cd.plus .cam{inset-inline-end:8px}
+.sec .chip{margin-inline-start:auto}.cd>.ct{padding-inline-end:44px}.cd.tm-gp>.tm-gph:first-of-type,.cd.tm-gp .tm-gph:first-child{padding-inline-end:54px}
 .chip.w2{background:color-mix(in srgb,var(--ng) 18%,transparent)}
 .tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:500;background:var(--s3);color:var(--mu)}.tag.ac,.tag.chip-mg{background:color-mix(in srgb,var(--ac) 20%,transparent);color:var(--act)}.tag.chip-wc{background:color-mix(in srgb,var(--ng) 18%,transparent);color:var(--ng)}
 select.sr{appearance:none;color:var(--tx)}
@@ -495,7 +496,10 @@ function prepImgs(root){
       return im.decode?im.decode().catch(function(){}):null})}));
   return Promise.race([all,new Promise(function(r){setTimeout(r,12000)})])}
 function addCams(){
-  $$("#view .sec").forEach(function(h){if(h.querySelector(".scam"))return;h.insertAdjacentHTML("beforeend",'<button type="button" class="scam" data-seccam aria-label="تصوير القسم">'+ic("cam",16)+"</button>")})}
+  $$("#view .sec").forEach(function(h){if(h.querySelector(".scam"))return;
+    /* لو القسم تحته كارت واحد وله كاميرا لوحده، مانضيفش كاميرا تانية على العنوان */
+    var n=h.nextElementSibling,cnt=0,only=null;while(n&&!n.classList.contains("sec")){cnt++;only=n;n=n.nextElementSibling}
+    if(cnt===1&&only&&only.querySelector(":scope>.cam"))return;h.insertAdjacentHTML("beforeend",'<button type="button" class="scam" data-seccam aria-label="تصوير القسم">'+ic("cam",16)+"</button>")})}
 /* html2canvas 1.4.1 بيفشل لما المتصفح يرجّع ألوان حديثة (color-mix / color(srgb ...) / oklch) -
    فبنحوّلها لـ rgba صريحة جوه نسخة التصوير قبل ما نصوّر. ده كان سبب إن زراير التصوير مابتشتغلش في البطولات وغيرها */
 var H2C_URLS=["https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js","https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js","https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"],H2C_P=null;
@@ -562,7 +566,7 @@ function capture(el,title){
   $("#fm").onclick=function(e){var b=e.target.closest("button");if(!b)return;st.f=b.getAttribute("data-f");$$("#fm button").forEach(function(x){x.classList.toggle("on",x===b)});run()};
   $("#tt").onclick=function(e){st.t=!st.t;e.currentTarget.classList.toggle("on",st.t);run()};
   $("#wb").onclick=function(e){st.w=!st.w;e.currentTarget.classList.toggle("on",st.w);run()};
-  $("#dl").onclick=function(){if(!url){toast("استنى الصورة تجهز");return}var a=document.createElement("a");a.href=url;a.download=("فانتازي-ج"+S.gw+"-"+title).replace(/[\\/:*?"<>|]/g,"")+".png";document.body.appendChild(a);a.click();a.remove()};
+  $("#dl").onclick=function(){if(!url){toast("استنى الصورة تجهز");return}var a=document.createElement("a");a.href=url;a.download=("فانتازي-الجولة"+S.gw+"-"+title).replace(/[\\/:*?"<>|]/g,"")+".png";document.body.appendChild(a);a.click();a.remove()};
   $("#shr").onclick=function(){if(!url){toast("استنى الصورة تجهز");return}fetch(url).then(function(r){return r.blob()}).then(function(b){var f=new File([b],"fantasy.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f],title:title});toast("المشاركة المباشرة مش متاحة - حمّل الصورة")}).catch(function(){})};
   run()}
 

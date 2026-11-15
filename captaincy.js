@@ -280,7 +280,7 @@
     if (!d) { d = document.createElement("div"); d.id = "capAdm"; document.body.appendChild(d); }
     var I = ST.info || {};
     d.innerHTML = '<div class="tc"><h3>إدارة الكبتنة</h3><input class="cp-in" id="capKey" type="password" placeholder="مفتاح الأدمن (ADMIN_KEY)" value="' + esc(ST.admin) + '" autocomplete="off">' +
-      '<div class="ab"><button class="btn b1" data-capadm="lock">' + (I.locked ? "فتح الكبتنة" : "قفل الكبتنة") + '</button><button class="btn b2" data-capadm="auto">' + (I.autoFrom > 0 ? "الكابتن التلقائي: شغال من ج" + I.autoFrom + " (اضغط للإيقاف)" : "الكابتن التلقائي: موقوف (اضغط للتشغيل)") + '</button><button class="btn b2" data-capadm="init">تجهيز الباسوردات (يملى الفاضي بأرقام عشوائية)</button>' +
+      '<div class="ab"><button class="btn b1" data-capadm="lock">' + (I.locked ? "فتح الكبتنة" : "قفل الكبتنة") + '</button><button class="btn b2" data-capadm="auto">' + (I.autoFrom > 0 ? "الكابتن التلقائي: شغال من الجولة " + I.autoFrom + " (اضغط للإيقاف)" : "الكابتن التلقائي: موقوف (اضغط للتشغيل)") + '</button><button class="btn b2" data-capadm="init">تجهيز الباسوردات (يملى الفاضي بأرقام عشوائية)</button>' +
       '<button class="btn b2" data-capadm="clear" id="capClr">تصفير كباتن الجولة ' + (I.gw || "") + '</button><button class="btn b1" data-capadm="bulk">📋 لصق كباتن (تسجيل بالجملة)</button><button class="btn b2" data-capadm="copy">نسخ لوحة الكباتن</button><button class="btn b2" data-capadm="close">إغلاق</button></div><div id="capAdmMsg" class="cp-hint"></div></div>';
     ST.armed = false;
   }

@@ -96,7 +96,7 @@
     if (isMem(id)) { var m = MM()[id]; return m ? ' data-act="m" data-arg="' + esc(m.uid) + '"' : ""; }
     return ' data-act="t" data-arg="' + esc(id) + '"';
   }
-  function gwTxt(g) { return !g || !g.length ? "الجولة لسه ماتحددتش" : (g.length === 1 ? "ج" + g[0] : "ج" + g[0] + "–ج" + g[g.length - 1]); }
+  function gwTxt(g) { return !g || !g.length ? "الجولة لسه ماتحددتش" : (g.length === 1 ? "الجولة " + g[0] : "الجولات " + g[0] + " – " + g[g.length - 1]); }
   function cloneO(o) { return JSON.parse(JSON.stringify(o)); }
   function pill(t, c) { return '<span class="tm-pill ' + (c || "") + '">' + t + "</span>"; }
   function find(arr, f) { for (var i = 0; i < arr.length; i++) if (f(arr[i], i)) return arr[i]; return null; }
@@ -252,7 +252,7 @@
     if (ST.admin) head += '<div class="tm-row tm-gap"><button class="chip" data-tm="edit">✎ تعديل البطولة</button><button class="chip" data-tm="dup">نسخ</button><button class="chip" data-tm="delask" data-a="' + esc(it.id) + '" style="color:#ff6b81">🗑 مسح البطولة</button></div>';
     if (!M) { pollModel(); return head + '<div class="plz" style="min-height:240px;margin-top:12px"></div><div class="tm-note">بيحمّل نقاط الجولات علشان يحسب البطولة...</div>'; }
     var res = result(it);
-    var note = (S.cur && S.gw !== S.cur) ? '<div class="tm-note">الأرقام محسوبة لحد <b>ج' + S.gw + '</b> (الجولة المعروضة دلوقتي). <button class="chip" data-tm="jump" style="margin-inline-start:6px">احسب لحد الجولة الحالية ج' + S.cur + "</button></div>" : "";
+    var note = (S.cur && S.gw !== S.cur) ? '<div class="tm-note">الأرقام محسوبة لحد <b>الجولة ' + S.gw + '</b> (الجولة المعروضة دلوقتي). <button class="chip" data-tm="jump" style="margin-inline-start:6px">احسب لحد الجولة الحالية ' + S.cur + "</button></div>" : "";
     var champ = res.champion ? '<div class="tm-champ"><i>🏆</i><div><small>بطل ' + esc(c.name) + "</small><b>" + esc(nameOf(res.champion)) + "</b>" + (subOf(res.champion) ? "<small>" + esc(subOf(res.champion)) + "</small>" : "") + "</div></div>" : "";
     var tab = ST.tab && (ST.tab === "ov" || ST.tab === "ind" || res.byId[ST.tab]) ? ST.tab : defaultTab(res);
     var tabs = '<div class="tm-tabs"><button class="tm-tab' + (tab === "ov" ? " on" : "") + '" data-tm="tab" data-a="ov">نظرة عامة</button>' +
@@ -275,7 +275,7 @@
     s.rounds.forEach(function (r) { (r.gws || []).forEach(function (x) { g.push(x); }); });
     (s.gwsList || []).forEach(function (x) { g.push(x); });
     if (!g.length) return "الجولات لسه ماتحددتش";
-    return "ج" + Math.min.apply(null, g) + " → ج" + Math.max.apply(null, g);
+    var lo = Math.min.apply(null, g), hi = Math.max.apply(null, g); return lo === hi ? "الجولة " + lo : "الجولات " + lo + " → " + hi;
   }
   function stagePills(s) {
     return (s.complete ? pill("خلصت", "ok") : s.live ? pill("لايف", "live") : "") + (s.tentative ? pill("مؤقت لحد ما اللي قبلها يخلص", "no") : "");
@@ -302,7 +302,7 @@
     if (T.ranking) {
       cols = [nc("pos", "المركز", function (r) { return r.pos; }), nameCol(), nc("total", "المجموع", function (r) { return r.total; }), nc("gp", "جولات", function (r) { return r.gp; }), nc("best", "أحسن جولة", function (r) { return r.best; }),
         nc("avg", "المتوسط", function (r) { return r.avg; }), nc("raw", "قبل الاستبعاد", function (r) { return r.raw; }, { def: S0.st.drop > 0 })];
-      (S0.gwsList || []).forEach(function (g, j) { cols.push(nc("g" + g, "ج" + g, function (r) { return r.per[j]; }, { def: (S0.gwsList.length <= 6) })); });
+      (S0.gwsList || []).forEach(function (g, j) { cols.push(nc("g" + g, "الجولة " + g, function (r) { return r.per[j]; }, { def: (S0.gwsList.length <= 6) })); });
     } else {
       cols = [nc("pos", "المركز", function (r) { return r.pos; }), nameCol(), nc("p", "لعب", function (r) { return r.p; }), nc("w", "فوز", function (r) { return r.w; }), nc("d", "تعادل", function (r) { return r.d; }), nc("l", "خسارة", function (r) { return r.l; }),
         nc("pf", "له", function (r) { return r.pf; }), nc("pa", "عليه", function (r) { return r.pa; }), nc("diff", "الفارق", function (r) { return r.diff; }), nc("pts", "النقاط", function (r) { return r.pts; }),
@@ -390,7 +390,7 @@
     var rows = E.leaderboard(ids, gws, ictx, 0);
     var cols = [nc("pos", "المركز", function (r) { return r.pos; }), nameCol(), nc("team", "التيم", function (r) { return subOf(r.id); }, { num: false }), nc("total", "المجموع", function (r) { return r.total; }),
       nc("gp", "جولات", function (r) { return r.gp; }), nc("best", "أحسن جولة", function (r) { return r.best; }), nc("avg", "المتوسط", function (r) { return r.avg; })];
-    return '<div class="tm-note">ترتيب أفراد التيمات المشاركة من <b>ج' + gws[0] + "</b> لحد <b>ج" + gws[gws.length - 1] + "</b> (نقاط كل عضو لوحده).</div>" +
+    return '<div class="tm-note">ترتيب أفراد التيمات المشاركة من <b>الجولة ' + gws[0] + "</b> لحد <b>الجولة " + gws[gws.length - 1] + "</b> (نقاط كل عضو لوحده).</div>" +
       '<div style="margin-top:10px">' + GRID.render({ key: "tm_ind_" + it.id, title: c.name + " - ترتيب الأفراد", rows: rows, cols: cols, rowKey: function (r) { return r.id; }, idx: false, defSort: function (a, b) { return a.pos - b.pos; }, act: function (r) { return actAttr(r.id); } }) + "</div>";
   }
 
@@ -549,7 +549,7 @@
       h += fld(mpgL, inp(p + "mpg", st.mpg || 1, { n: 1 })) + '<div class="tm-hint">' + (T === "knockout" ? "1 = كل دور في جولة لوحده. 2 = الدور واللي بعده في نفس الجولة (التيم اللي بيعدّي بيلعب قصاد خصم جديد بنقاط نفس الجولة). لو الأدوار ذهاب وإياب، الماتشين ممكن يقعوا في نفس الجولة كمان." : T === "swiss" ? "1 = دور واحد في الجولة. 3 = تلات أدوار (خصوم مختلفين) بنقاط نفس الجولة." : "1 = ماتش واحد في الجولة. 3 = التيم بيلعب 3 خصوم مختلفين في نفس الجولة (كل خصم ماتش لوحده بنقاط نفس الجولة). أنت بتحدد الرقم.") + "</div>";
     }
     if (T !== "ranking") h += fld("جولات مخصصة (اختياري): افصل بفاصلة، مثال 5,6,9,10", inp(p + "gwsTxt", st.gwsTxt != null ? st.gwsTxt : (st.gws || []).join(","), { ph: "سيبه فاضي لو متتالية" }));
-    if (i > 0) h += '<div class="tm-row" style="margin-top:8px"><button class="chip" data-tm="chain" data-a="' + i + '">ابدأ بعد المرحلة اللي قبلها (ج' + (gwEnd(d, i - 1) + 1) + ")</button></div>";
+    if (i > 0) h += '<div class="tm-row" style="margin-top:8px"><button class="chip" data-tm="chain" data-a="' + i + '">ابدأ بعد المرحلة اللي قبلها (الجولة ' + (gwEnd(d, i - 1) + 1) + ")</button></div>";
     h += '<div class="tm-hint">المرحلة دي هتاخد حوالي ' + E.gwsNeeded(st, Math.max(2, estN(d, i))) + " جولة (تقديري على حسب عدد المتسابقين).</div>";
     /* خيارات النوع */
     if (T === "league" || T === "groups" || T === "swiss") {
@@ -994,18 +994,18 @@
     return any ? rr1(s) : null;
   }
   function seasonStats(res, id) {
-    if (isMem(id)) { var X = res.ctx.memX[id]; return X ? { total: X.total, avg: X.avg, best: X.best ? "ج" + X.best.g + " (" + fmt(X.best.net) + ")" : "–", hits: X.hits, bench: X.benchN ? X.bench : null, n: X.n } : null; }
+    if (isMem(id)) { var X = res.ctx.memX[id]; return X ? { total: X.total, avg: X.avg, best: X.best ? "الجولة " + X.best.g + " (" + fmt(X.best.net) + ")" : "–", hits: X.hits, bench: X.benchN ? X.bench : null, n: X.n } : null; }
     var T = find(res.M.TL, function (t) { return t.team === id; });
-    return T ? { total: T.total, avg: T.avg, best: T.best ? "ج" + T.best.g + " (" + fmt(T.best.v) + ")" : "–", hits: T.hits, bench: T.benchN ? T.bench : null, n: T.gp } : null;
+    return T ? { total: T.total, avg: T.avg, best: T.best ? "الجولة " + T.best.g + " (" + fmt(T.best.v) + ")" : "–", hits: T.hits, bench: T.benchN ? T.bench : null, n: T.gp } : null;
   }
   function wc(a, b, f) { return a != null && b != null && f(a, b) ? ' class="tm-w"' : ""; }
   function memRef(id) { var p = String(id).split("|"); return { team: p[0], entryId: p.slice(1).join("|") }; }
   /* حوار المقارنة الأصلي بتاع التطبيق (compare.js) بيتفتح هنا تلقائي على الطرفين، بحالة منفصلة عن تبويب المقارنات */
   function embedFor(X, a, b, gws, key) {
     var E = window.__cmpEmbed; if (!E) return "";
-    if ((gws || []).indexOf(S.gw) < 0 && !ST.cmpForce) return F.card("حوار المقارنة", '<div class="ct">حوار المقارنة</div><div class="tm-hint" style="margin:-4px 0 10px">حوار المقارنة بيحلل الجولة المعروضة دلوقتي (ج' + S.gw + ")، وجولات الماتش ده: " + esc(gwTxt(gws)) + ".</div>" + '<button class="chip" data-tm="cmpforce">افتح حوار المقارنة لـ ج' + S.gw + " برضو</button>", "plus ov-full");
+    if ((gws || []).indexOf(S.gw) < 0 && !ST.cmpForce) return F.card("حوار المقارنة", '<div class="ct">حوار المقارنة</div><div class="tm-hint" style="margin:-4px 0 10px">حوار المقارنة بيحلل الجولة المعروضة دلوقتي (الجولة ' + S.gw + ")، وجولات الماتش ده: " + esc(gwTxt(gws)) + ".</div>" + '<button class="chip" data-tm="cmpforce">افتح حوار المقارنة لـ الجولة ' + S.gw + " برضو</button>", "plus ov-full");
     var o = isMem(a) ? { key: "M|" + a + "|" + b, mode: "m", a: memRef(a), b: memRef(b) } : { key: "T|" + a + "|" + b, mode: "t", t1: a, t2: b };
-    return '<div class="sec">حوار المقارنة · ج' + S.gw + "</div>" + E.html(o);
+    return '<div class="sec">حوار المقارنة · الجولة ' + S.gw + "</div>" + E.html(o);
   }
   function cmpHtml(it, key, fromDrawer) {
     var res = result(it), back = '<div class="tm-top"><div class="tm-row"><button class="chip" data-tm="cmpback">← ' + (fromDrawer ? "البطولة" : "رجوع") + '</button></div><div class="tm-row"><span class="tm-pill">' + esc(it.cfg.name) + "</span></div></div>";
@@ -1017,7 +1017,7 @@
     var stt = X.done ? (X.live ? "لايف" : "خلصت") : "لسه";
     if (ST.duel && X.legs[ST.duel.li] && X.legs[ST.duel.li].duel && X.legs[ST.duel.li].duel.pairs[ST.duel.i]) {
       var f0 = X.legs[ST.duel.li], pr0 = f0.duel.pairs[ST.duel.i], g0 = (f0.gws || []).filter(function (g) { return res.M.gws.indexOf(g) > -1; });
-      var rows0 = g0.map(function (g) { var va = res.ctx.mscore(pr0.a, g), vb = res.ctx.mscore(pr0.b, g); return "<tr><td>ج" + g + "</td><td" + wc(va, vb, function (p, q) { return p > q; }) + ">" + fmt(va) + "</td><td" + wc(va, vb, function (p, q) { return q > p; }) + ">" + fmt(vb) + "</td></tr>"; }).join("");
+      var rows0 = g0.map(function (g) { var va = res.ctx.mscore(pr0.a, g), vb = res.ctx.mscore(pr0.b, g); return "<tr><td>الجولة " + g + "</td><td" + wc(va, vb, function (p, q) { return p > q; }) + ">" + fmt(va) + "</td><td" + wc(va, vb, function (p, q) { return q > p; }) + ">" + fmt(vb) + "</td></tr>"; }).join("");
       return '<div class="tm-top"><div class="tm-row"><button class="chip" data-tm="duelback">← المواجهة</button></div><div class="tm-row"><span class="tm-pill">' + esc(it.cfg.name) + "</span></div></div>" +
         F.card("مواجهة " + nameOf(pr0.a) + " × " + nameOf(pr0.b), '<div class="tm-cmp"><div class="tn">' + esc(nameOf(pr0.a)) + "<small>" + esc(subOf(pr0.a)) + '</small></div><div class="big">' + (pr0.sa != null && pr0.sb != null ? fmt(pr0.sa) + " - " + fmt(pr0.sb) : "vs") + "<small>" + esc(gwTxt(f0.gws)) + '</small></div><div class="tn b">' + esc(nameOf(pr0.b)) + "<small>" + esc(subOf(pr0.b)) + "</small></div></div>", "plus ov-full") +
         embedFor(X, pr0.a, pr0.b, f0.gws, "") +
@@ -1028,7 +1028,7 @@
     /* نقاط كل جولة */
     var tot = [0, 0], rowsG = gws.map(function (g) {
       var va = ctx.score(X.a, g), vb = ctx.score(X.b, g); tot[0] += va || 0; tot[1] += vb || 0;
-      return "<tr><td>ج" + g + "</td><td" + wc(va, vb, function (p, q) { return p > q; }) + ">" + fmt(va) + "</td><td" + wc(va, vb, function (p, q) { return q > p; }) + ">" + fmt(vb) + "</td></tr>";
+      return "<tr><td>الجولة " + g + "</td><td" + wc(va, vb, function (p, q) { return p > q; }) + ">" + fmt(va) + "</td><td" + wc(va, vb, function (p, q) { return q > p; }) + ">" + fmt(vb) + "</td></tr>";
     }).join("");
     var sa = seasonStats(res, X.a), sb = seasonStats(res, X.b);
     function srow(l, f, hi) { var va = sa ? f(sa) : null, vb = sb ? f(sb) : null; return "<tr><td>" + l + "</td><td" + (hi ? wc(va, vb, hi) : "") + ">" + fmt(va) + "</td><td" + (hi ? wc(vb, va, hi) : "") + ">" + fmt(vb) + "</td></tr>"; }
