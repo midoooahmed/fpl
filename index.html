@@ -244,7 +244,7 @@ table.gt{border-collapse:separate;border-spacing:0;width:max-content;min-width:1
 </style>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><div class="sp-w"><i class="sp-ring"></i><i class="sp-ring b"></i><img class="sp-logo" src="logo.png" alt=""></div><div class="sp-t">مركز الفانتازي</div><div class="sp-bar"><i></i></div></div>
+<div id="splash" aria-hidden="true"><div class="sp-w"><i class="sp-ring"></i><i class="sp-ring b"></i><img class="sp-logo" src="logo.png" alt=""></div><div class="sp-t">Game Of Fantasy</div><div class="sp-bar"><i></i></div></div>
 <script>window.__spT0=Date.now();setTimeout(function(){var s=document.getElementById("splash");if(s&&!window.__spKeep)s.classList.add("out")},9000)</script>
 <header class="bar"><button class="ib" id="mn" aria-label="القائمة"></button><h1 id="ttl">الملخص</h1><button class="ib" id="sr" aria-label="بحث"></button><button class="ib" id="cp" aria-label="تصوير الصفحة"></button></header>
 <div class="ctx" id="ctx"></div>
@@ -544,7 +544,7 @@ function capture(el,title){
       var w=document.createElement("div"),wide=(el.matches&&el.matches(".tw,.tm-br"))||!!el.querySelector("table.gt,table.tm-st,table.mini-t,.tw,.tm-br");
       w.className="shotw"+(st.f==="s"?" story":"")+(wide?" wide":"");
       if(st.w){w.setAttribute("data-theme","light");w.style.cssText+="background:#fff;color:#101626"}else w.setAttribute("data-theme",S.theme);
-      w.innerHTML=(st.t?"<h2>"+esc(title)+"</h2>":"")+el.outerHTML+'<div class="ft2"><span>مركز الفانتازي - الجولة '+S.gw+"</span><span>"+new Date().toLocaleString("ar-EG")+"</span></div>";
+      w.innerHTML=(st.t?"<h2>"+esc(title)+"</h2>":"")+el.outerHTML+'<div class="ft2"><span> Game Of Fantasy - الجولة '+S.gw+"</span><span>"+new Date().toLocaleString("ar-EG")+"</span></div>";
       $$(".cam,.ib,.scam,.tm-cam,[data-noshot]",w).forEach(function(x){x.remove()});
       $$("[hidden]",w).forEach(function(x){x.remove()});
       $$("script,iframe,video",w).forEach(function(x){x.remove()});
@@ -573,7 +573,7 @@ function capture(el,title){
 /* ===== الهيدر والقائمة والرسم ===== */
 function drawer(){
   var tabs=CFG.TABS||[],onS=(S.tab in NAMES)||R.tabs.some(function(t){return t.id===S.tab});
-  $("#drawer").innerHTML='<div class="dh"><span class="mk">'+ic("stats")+'</span><span style="flex:1">مركز الفانتازي</span><button class="ib f" data-close aria-label="قفل">'+ic("close")+'</button></div><div class="ns"><div class="gp">التبويبات</div>'+
+  $("#drawer").innerHTML='<div class="dh"><span class="mk">'+ic("stats")+'</span><span style="flex:1">Game Of Fantasy</span><button class="ib f" data-close aria-label="قفل">'+ic("close")+'</button></div><div class="ns"><div class="gp">التبويبات</div>'+
    '<button class="tb '+(onS?"on":"")+'" data-tab="overview"><i>'+ic("stats")+'</i><span>شويه احصائيات<small>مسابقتي</small></span>'+ic("cd",18)+"</button>"+
    '<div class="sub">'+SUBS.concat(R.tabs.map(function(t){return[t.id,t.name]})).map(function(s){var cnt=S.D?{transfers:S.D.members.reduce(function(a,m){return a+m.transfers.length},0),teams:new Set(S.D.members.map(function(m){return m.team})).size,members:S.D.members.length,players:Object.keys(S.D.players).length}[s[0]]:"";return'<button data-tab="'+s[0]+'" class="'+(S.tab===s[0]?"on":"")+'">'+s[1]+(cnt?'<em class="n">'+cnt+"</em>":"")+"</button>"}).join("")+"</div>"+
    R.main.map(function(t){return'<button class="tb '+(S.tab===t.id?"on":"")+'" data-tab="'+t.id+'"><i>'+ic(t.icon||"swap")+"</i><span>"+esc(t.name)+"<small>"+esc(t.sub||"")+"</small></span>"+ic("cl",18)+"</button>"}).join("")+
