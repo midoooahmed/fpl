@@ -189,7 +189,7 @@
   function initial(n) { return esc(String(n || "؟").trim().charAt(0) || "؟"); }
 
   function stageProfile(g, canGuest) {
-    g.innerHTML = '<div class="gt-c"><h2>أهلاً بيك في مركز الفانتازي</h2><p>اختار تيمك وشخصك الأول، علشان نظبطلك التطبيق ونسجّل دخولك.</p>' + formHtml("gtOk") +
+    g.innerHTML = '<div class="gt-c"><h2>أهلاً بيك في Game Of Fantasy</h2><p>اختار تيمك وشخصك الأول، علشان نظبطلك التطبيق ونسجّل دخولك.</p>' + formHtml("gtOk") +
       '<button class="gt-skip" id="gtSkip">ادخل كزائر</button></div>';
   }
   function stagePray(g, p) {
