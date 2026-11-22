@@ -73,7 +73,16 @@
       ".tm-cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:14px}.tm-cmp .tn{font-weight:800;font-size:14px;line-height:1.4;word-break:break-word}.tm-cmp .tn.b{text-align:end}.tm-cmp .big{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 14px;border-radius:14px;background:var(--s3);text-align:center}.tm-cmp small{display:block;color:var(--mu);font-weight:500;font-size:11px;margin-top:2px}",
       ".tm-cc{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tm-ml{display:grid;gap:4px}.tm-ml div{display:flex;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:9px;background:var(--s2);font-size:12px;line-height:1.35}.tm-ml div b{font-variant-numeric:tabular-nums}.tm-ml .h{background:none;font-weight:700;color:var(--act);padding:2px 4px}",
       ".tm-du{border:1px solid var(--ln);border-radius:12px;background:var(--s1);overflow:hidden}.tm-du+.tm-du{margin-top:6px}.tm-du>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:9px 11px;font-size:12.5px}.tm-du>summary::-webkit-details-marker{display:none}.tm-du .in{padding:4px 10px 10px}",
-      ".tm-w{color:var(--act);font-weight:800}"
+      ".tm-w{color:var(--act);font-weight:800}",
+      /* ---- تنظيم وسلاسة (نفس الشكل) ---- */
+      ".tm-meta{display:flex;gap:6px;overflow-x:auto;padding:2px 0;margin-top:8px;scrollbar-width:none;flex-wrap:nowrap}.tm-meta::-webkit-scrollbar{display:none}",
+      ".tm-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}.tm-hd h2{margin:0;font-size:20px;font-weight:700;min-width:0;word-break:break-word}",
+      ".tm-adm{margin-top:10px;border:1px solid var(--ln);border-radius:14px;background:var(--s1);overflow:hidden}.tm-adm>summary{list-style:none;cursor:pointer;padding:10px 14px;font-size:13px;font-weight:600;color:var(--mu);display:flex;align-items:center;justify-content:space-between}.tm-adm>summary::-webkit-details-marker{display:none}.tm-adm>summary:after{content:'▾';transition:transform .2s}.tm-adm[open]>summary:after{transform:rotate(180deg)}.tm-adm .tm-row{padding:0 12px 12px}",
+      ".tm-info{margin-top:8px;border:1px dashed var(--ln);border-radius:12px;background:var(--s2);overflow:hidden}.tm-info>summary{list-style:none;cursor:pointer;padding:9px 12px;font-size:12.5px;font-weight:600;color:var(--mu);display:flex;align-items:center;justify-content:space-between}.tm-info>summary::-webkit-details-marker{display:none}.tm-info>summary:after{content:'▾';transition:transform .2s}.tm-info[open]>summary:after{transform:rotate(180deg)}.tm-info>div{padding:0 12px 10px}.tm-info .tm-note{margin-top:6px}",
+      ".tm-tabs{scroll-snap-type:x proximity;position:sticky;top:calc(60px + var(--safe-t,0px));z-index:4;background:linear-gradient(to bottom,var(--bg) 78%,transparent);margin:0 -2px;padding-inline:2px}.tm-tab{scroll-snap-align:center;transition:background-color .2s,border-color .2s,transform .15s}.tm-tab:active{transform:scale(.95)}",
+      ".tm-sec2{margin:16px 2px 8px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--mu)}.tm-sec2:after{content:'';flex:1;height:1px;background:var(--ln)}",
+      "@keyframes tmIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.tm-in{animation:tmIn .26s ease both}",
+      "@media (prefers-reduced-motion:reduce){.tm-in{animation:none}.tm-tab,.tm-it{transition:none}}"
     ].join("\n");
     document.head.appendChild(st);
   })();
@@ -104,9 +113,13 @@
   function rr1(x) { return Math.round(x * 10) / 10; }
 
   /* ---------- بيفتكر آخر حاجة فتحتها (بطولة / تبويب / جولة / مجموعة) ---------- */
-  var UI = (function () { var o = {}; try { o = JSON.parse(LS.get("fc_tmui") || "{}") || {}; } catch (e) {} o.sub = o.sub || {}; o.rd = o.rd || {}; o.gf = o.gf || {}; return o; })();
+  var UI = (function () { var o = {}; try { o = JSON.parse(LS.get("fc_tmui") || "{}") || {}; } catch (e) {} o.sub = o.sub || {}; o.rd = o.rd || {}; o.gf = o.gf || {}; o.det = o.det || {}; return o; })();
   function saveUI() { UI.cur = ST.cur || ""; UI.tab = ST.tab || ""; LS.set("fc_tmui", JSON.stringify(UI)); }
   if (UI.cur) { ST.cur = UI.cur; ST.tab = UI.tab || ""; }
+  /* حالة فتح/قفل أي قسم قابل للطي بتتحفظ، عشان تحديث اللايف مايرجّعهوش لحالته الأصلية */
+  function detOpen(k, def) { var v = UI.det[k]; return v == null ? !!def : !!v; }
+  document.addEventListener("toggle", function (e) { var d = e.target, k = d && d.getAttribute && d.getAttribute("data-tmd"); if (!k) return; UI.det[k] = d.open ? 1 : 0; LS.set("fc_tmui", JSON.stringify(UI)); }, true);
+  var ANIM = false; /* حركة دخول خفيفة بس لما تبدّل تبويب/قسم، مش مع كل تحديث لايف */
   function prof() { try { var p = JSON.parse(LS.get("fc_profile") || "null"); return p && p.team && p.entryId ? p : null; } catch (e) { return null; } }
   function isMine(id) { var p = prof(); return !!(p && id && (id === p.team || id === p.team + "|" + p.entryId)); }
   /* العضو يفتح مواجهة فريقه بس. الأدمن يفتح أي حاجة */
@@ -247,9 +260,9 @@
   function viewOne(it) {
     var c = it.cfg, M = getM();
     var head = '<div class="tm-top"><div class="tm-row"><button class="chip" data-tm="back">← البطولات</button></div><div class="tm-row">' + adminChip() + "</div></div>" +
-      '<div class="tm-top tm-gap"><h2>' + esc(c.name) + '</h2></div><div class="tm-row" style="margin-top:6px">' + pill(MODES[c.mode]) + pill(c.players.length + (c.mode === "individual" ? " لاعب" : " تيم")) +
+      '<div class="tm-hd"><h2>' + esc(c.name) + '</h2></div><div class="tm-meta">' + pill(MODES[c.mode]) + pill(c.players.length + (c.mode === "individual" ? " لاعب" : " تيم")) +
       (c.duels && c.duels.on && c.mode !== "individual" ? pill(c.duels.n ? "مواجهات أعضاء " + c.duels.n + " ضد " + c.duels.n : "مواجهات أعضاء") : "") + (c.mode !== "individual" ? pill(c.scoring.team === "avg" ? "نقاط التيم = متوسط الأعضاء" : c.scoring.team === "top" ? "نقاط التيم = أحسن " + (c.scoring.n || 3) + " أعضاء" : "نقاط التيم العادية") : "") + "</div>";
-    if (ST.admin) head += '<div class="tm-row tm-gap"><button class="chip" data-tm="edit">✎ تعديل البطولة</button><button class="chip" data-tm="dup">نسخ</button><button class="chip" data-tm="delask" data-a="' + esc(it.id) + '" style="color:#ff6b81">🗑 مسح البطولة</button></div>';
+    if (ST.admin) head += '<details class="tm-adm" data-tmd="adm"' + (detOpen("adm", false) ? " open" : "") + '><summary>⚙ إدارة البطولة</summary><div class="tm-row"><button class="chip" data-tm="edit">✎ تعديل البطولة</button><button class="chip" data-tm="dup">نسخ</button><button class="chip" data-tm="delask" data-a="' + esc(it.id) + '" style="color:#ff6b81">🗑 مسح البطولة</button></div></details>';
     if (!M) { pollModel(); return head + '<div class="plz" style="min-height:240px;margin-top:12px"></div><div class="tm-note">بيحمّل نقاط الجولات علشان يحسب البطولة...</div>'; }
     var res = result(it);
     var note = (S.cur && S.gw !== S.cur) ? '<div class="tm-note">الأرقام محسوبة لحد <b>الجولة ' + S.gw + '</b> (الجولة المعروضة دلوقتي). <button class="chip" data-tm="jump" style="margin-inline-start:6px">احسب لحد الجولة الحالية ' + S.cur + "</button></div>" : "";
@@ -259,7 +272,8 @@
       res.stages.map(function (s) { return '<button class="tm-tab' + (tab === s.id ? " on" : "") + (s.complete ? " done" : "") + '" data-tm="tab" data-a="' + esc(s.id) + '">' + esc(s.name) + "</button>"; }).join("") +
       (c.mode === "both" ? '<button class="tm-tab' + (tab === "ind" ? " on" : "") + '" data-tm="tab" data-a="ind">ترتيب الأفراد</button>' : "") + "</div>";
     var body = tab === "ov" ? overviewHtml(it, res) : tab === "ind" ? indivHtml(it, res) : stageHtml(it, res, res.byId[tab]);
-    return head + note + champ + tabs + body;
+    var inCls = ANIM ? " tm-in" : ""; ANIM = false;
+    return head + note + champ + tabs + '<div class="tm-body' + inCls + '">' + body + "</div>";
   }
 
   function overviewHtml(it, res) {
@@ -325,8 +339,8 @@
     var last = -1;
     S0.rounds.forEach(function (rd, i) { if (rd.fixtures.some(function (f) { return f.done; })) last = i; });
     return S0.rounds.map(function (rd, i) {
-      var open = i === Math.max(0, last) || i === last + 1;
-      return '<details class="tm-rd"' + (open ? " open" : "") + "><summary><span>" + esc(rd.name || "الجولة " + rd.no) + "</span><small>" + esc(gwTxt(rd.gws)) + (rd.mpg > 1 ? " · " + rd.mpg + " مواجهات للتيم في الجولة" : "") + (rd.pending ? " · لسه مستني اللي قبلها" : "") + "</small></summary>" +
+      var open = detOpen("rd_" + S0.id + "_" + rd.no, i === Math.max(0, last) || i === last + 1);
+      return '<details class="tm-rd" data-tmd="rd_' + esc(S0.id) + "_" + rd.no + '"' + (open ? " open" : "") + "><summary><span>" + esc(rd.name || "الجولة " + rd.no) + "</span><small>" + esc(gwTxt(rd.gws)) + (rd.mpg > 1 ? " · " + rd.mpg + " مواجهات للتيم في الجولة" : "") + (rd.pending ? " · لسه مستني اللي قبلها" : "") + "</small></summary>" +
         (rd.fixtures.length ? rd.fixtures.map(function (f) { return fxHtml(f, S0); }).join("") : '<div class="tm-fx"><span class="mut">مفيش ماتشات لسه</span></div>') + "</details>";
     }).join("");
   }
@@ -357,13 +371,15 @@
 
   function stageHtml(it, res, S0) {
     if (!S0) return "";
-    var h = '<div class="tm-sh"><b>' + esc(S0.name) + "</b>" + pill(esc(E.TYPES[S0.type])) + pill(S0.ents.length + " متسابق") + pill(esc(spanTxt(S0))) + stagePills(S0) + "</div>";
-    S0.notes.forEach(function (n) { h += '<div class="tm-note">' + esc(n) + "</div>"; });
+    var h = '<div class="tm-sh"><b>' + esc(S0.name) + "</b>" + stagePills(S0) + '</div><div class="tm-meta" style="margin-top:0;margin-bottom:4px">' + pill(esc(E.TYPES[S0.type])) + pill(S0.ents.length + " متسابق") + pill(esc(spanTxt(S0))) + "</div>";
+    var info = "";
+    S0.notes.forEach(function (n) { info += '<div class="tm-note">' + esc(n) + "</div>"; });
     if (S0.type === "league" || S0.type === "groups" || S0.type === "swiss") {
       var TBL = { diff: "فارق النقاط", pf: "النقاط له", wins: "عدد الفوز", h2h: "المواجهات المباشرة", season: "أداء الموسم" }, tbs = (S0.st.tb && S0.st.tb.length ? S0.st.tb : ["diff", "pf"]);
-      h += '<div class="tm-hint">ترتيب الجدول: النقاط ← ' + tbs.map(function (k) { return TBL[k] || k; }).join(" ← ") + " ← التصنيف الأولي.</div>";
+      info += '<div class="tm-hint">ترتيب الجدول: النقاط ← ' + tbs.map(function (k) { return TBL[k] || k; }).join(" ← ") + " ← التصنيف الأولي.</div>";
     }
     if (S0.tentative) h += '<div class="tm-note">المتسابقين هنا <b>مؤقتين</b> لأنهم جايين من مرحلة لسه ماخلصتش. هيتأكدوا تلقائي أول ما تخلص.</div>';
+    if (info) h += '<details class="tm-info" data-tmd="info_' + esc(S0.id) + '"' + (detOpen("info_" + S0.id, false) ? " open" : "") + "><summary>ℹ️ تفاصيل المرحلة وطريقة الترتيب</summary><div>" + info + "</div></details>";
     var subs = subsFor(S0), sub = subOfStage(S0, subs);
     if (subs.length) h += '<div class="tm-subs">' + subs.map(function (x) { return '<button class="tm-sub' + (sub === x[0] ? " on" : "") + '" data-tm="sub" data-a="' + esc(S0.id) + "|" + x[0] + '">' + x[1] + "</button>"; }).join("") + "</div>";
     if (S0.type === "ranking") {
@@ -716,8 +732,8 @@
     switch (a) {
       case "open": ST.cur = arg; ST.tab = ""; F.render(); window.scrollTo(0, 0); return true;
       case "back": ST.cur = null; ST.cmp = null; saveUI(); F.render(); return true;
-      case "tab": ST.tab = arg; saveUI(); F.render(); return true;
-      case "sub": { var pr0 = String(arg).split("|"); UI.sub[pr0[0]] = pr0[1]; saveUI(); F.render(); return true; }
+      case "tab": ST.tab = arg; ANIM = true; saveUI(); F.render(); return true;
+      case "sub": { var pr0 = String(arg).split("|"); UI.sub[pr0[0]] = pr0[1]; ANIM = true; saveUI(); F.render(); return true; }
       case "cmp": {
         if (!it) return true;
         var rs0 = result(it), X0 = rs0 && resolveCmp(rs0, arg);
@@ -892,14 +908,14 @@
     var h = '<div class="tm-tb">' + D.html("tmrd_" + S0.id, {
       prefix: "الجولة", label: rd.name || ("الجولة " + rd.no), value: String(rd.no),
       options: L.map(function (r) { return { v: String(r.no), l: r.name || ("الجولة " + r.no), t: gwTxt(r.gws) + (r.mpg > 1 ? " · ×" + r.mpg : "") }; }),
-      onPick: function (v) { UI.rd[S0.id] = Number(v); saveUI(); rerender(); }
+      onPick: function (v) { UI.rd[S0.id] = Number(v); ANIM = true; saveUI(); rerender(); }
     });
     if (withGroup && S0.tables.length > 1) {
       var g = curGroup(S0);
       h += D.html("tmgp_" + S0.id, {
         prefix: "المجموعة", label: g === "all" ? "كل المجموعات" : (S0.tables[Number(g)] ? S0.tables[Number(g)].name : "كل المجموعات"), value: g, search: true,
         options: [{ v: "all", l: "كل المجموعات" }].concat(S0.tables.map(function (T, i) { return { v: String(i), l: T.name }; })),
-        onPick: function (v) { UI.gf[S0.id] = v; saveUI(); rerender(); }
+        onPick: function (v) { UI.gf[S0.id] = v; ANIM = true; saveUI(); rerender(); }
       });
     }
     return h + "</div>";
@@ -1014,17 +1030,17 @@
     if (!X) return back + '<div class="empty">المواجهة دي مش موجودة (ممكن البطولة اتعدلت).</div>';
     if (!canOpen(X.a, X.b)) return back + '<div class="empty">تقدر تفتح مواجهة فريقك بس.</div>';
     var ctx = res.ctx, aN = esc(nameOf(X.a)), bN = esc(nameOf(X.b)), gws = X.gws.filter(function (g) { return res.M.gws.indexOf(g) > -1; });
-    var stt = X.done ? (X.live ? "لايف" : "خلصت") : "لسه";
     if (ST.duel && X.legs[ST.duel.li] && X.legs[ST.duel.li].duel && X.legs[ST.duel.li].duel.pairs[ST.duel.i]) {
       var f0 = X.legs[ST.duel.li], pr0 = f0.duel.pairs[ST.duel.i], g0 = (f0.gws || []).filter(function (g) { return res.M.gws.indexOf(g) > -1; });
       var rows0 = g0.map(function (g) { var va = res.ctx.mscore(pr0.a, g), vb = res.ctx.mscore(pr0.b, g); return "<tr><td>الجولة " + g + "</td><td" + wc(va, vb, function (p, q) { return p > q; }) + ">" + fmt(va) + "</td><td" + wc(va, vb, function (p, q) { return q > p; }) + ">" + fmt(vb) + "</td></tr>"; }).join("");
       return '<div class="tm-top"><div class="tm-row"><button class="chip" data-tm="duelback">← المواجهة</button></div><div class="tm-row"><span class="tm-pill">' + esc(it.cfg.name) + "</span></div></div>" +
-        F.card("مواجهة " + nameOf(pr0.a) + " × " + nameOf(pr0.b), '<div class="tm-cmp"><div class="tn">' + esc(nameOf(pr0.a)) + "<small>" + esc(subOf(pr0.a)) + '</small></div><div class="big">' + (pr0.sa != null && pr0.sb != null ? fmt(pr0.sa) + " - " + fmt(pr0.sb) : "vs") + "<small>" + esc(gwTxt(f0.gws)) + '</small></div><div class="tn b">' + esc(nameOf(pr0.b)) + "<small>" + esc(subOf(pr0.b)) + "</small></div></div>", "plus ov-full") +
+        F.card("مواجهة " + nameOf(pr0.a) + " × " + nameOf(pr0.b), '<div class="tm-cmp"><div class="tn">' + esc(nameOf(pr0.a)) + "<small>" + esc(subOf(pr0.a)) + '</small></div><div class="big">' + (pr0.sa != null && pr0.sb != null ? fmt(pr0.sa) + " - " + fmt(pr0.sb) : "vs") + '</div><div class="tn b">' + esc(nameOf(pr0.b)) + "<small>" + esc(subOf(pr0.b)) + "</small></div></div>", "plus ov-full") +
         embedFor(X, pr0.a, pr0.b, f0.gws, "") +
         F.card("نقاط كل جولة", '<div class="ct">نقاط كل جولة</div><div class="tbl-sc"><table class="tm-st"><thead><tr><th>الجولة</th><th>' + esc(nameOf(pr0.a)) + "</th><th>" + esc(nameOf(pr0.b)) + "</th></tr></thead><tbody>" + rows0 + "</tbody></table></div>", "plus ov-full");
     }
-    var h = back + F.card("مقارنة " + nameOf(X.a) + " × " + nameOf(X.b), '<div class="tm-cmp"><div class="tn">' + aN + (subOf(X.a) ? "<small>" + esc(subOf(X.a)) + "</small>" : "") + '</div><div class="big">' + (X.sa != null && X.sb != null ? fmt(X.sa) + " - " + fmt(X.sb) : "vs") + "<small>" + esc(gwTxt(X.gws)) + " · " + stt + '</small></div><div class="tn b">' + bN + (subOf(X.b) ? "<small>" + esc(subOf(X.b)) + "</small>" : "") + "</div></div>" + (X.by ? '<div class="tm-dx" style="padding:0 14px 10px">' + esc(X.by) + "</div>" : ""), "plus ov-full");
+    var h = back + F.card("مقارنة " + nameOf(X.a) + " × " + nameOf(X.b), '<div class="tm-cmp"><div class="tn">' + aN + (subOf(X.a) ? "<small>" + esc(subOf(X.a)) + "</small>" : "") + '</div><div class="big">' + (X.sa != null && X.sb != null ? fmt(X.sa) + " - " + fmt(X.sb) : "vs") + '</div><div class="tn b">' + bN + (subOf(X.b) ? "<small>" + esc(subOf(X.b)) + "</small>" : "") + "</div></div>" + (X.by ? '<div class="tm-dx" style="padding:0 14px 10px">' + esc(X.by) + "</div>" : ""), "plus ov-full");
     h += embedFor(X, X.a, X.b, X.gws, "");
+    h += '<div class="tm-sec2">📊 تفاصيل المواجهة</div>';
     /* نقاط كل جولة */
     var tot = [0, 0], rowsG = gws.map(function (g) {
       var va = ctx.score(X.a, g), vb = ctx.score(X.b, g); tot[0] += va || 0; tot[1] += vb || 0;
@@ -1034,6 +1050,7 @@
     function srow(l, f, hi) { var va = sa ? f(sa) : null, vb = sb ? f(sb) : null; return "<tr><td>" + l + "</td><td" + (hi ? wc(va, vb, hi) : "") + ">" + fmt(va) + "</td><td" + (hi ? wc(vb, va, hi) : "") + ">" + fmt(vb) + "</td></tr>"; }
     h += F.card("نقاط المواجهة", '<div class="ct">نقاط كل جولة</div><div class="tbl-sc"><table class="tm-st"><thead><tr><th>الجولة</th><th>' + aN + "</th><th>" + bN + "</th></tr></thead><tbody>" + rowsG +
       '<tr><td><b>المجموع</b></td><td class="pt">' + fmt(rr1(tot[0])) + '</td><td class="pt">' + fmt(rr1(tot[1])) + "</td></tr></tbody></table></div>", "plus ov-full");
+    h += '<div class="tm-sec2">📈 على مستوى الموسم</div>';
     h += F.card("إحصائيات الموسم", '<div class="ct">على مستوى الموسم</div><div class="tbl-sc"><table class="tm-st"><thead><tr><th></th><th>' + aN + "</th><th>" + bN + "</th></tr></thead><tbody>" +
       srow("مجموع الموسم", function (x) { return x.total; }, function (p, q) { return p > q; }) + srow("المتوسط", function (x) { return rr1(x.avg); }, function (p, q) { return p > q; }) + srow("أحسن جولة", function (x) { return x.best; }) +
       srow("الهيتات", function (x) { return x.hits; }, function (p, q) { return p < q; }) + (sa && sa.bench != null ? srow("نقاط الدكة", function (x) { return x.bench; }) : "") + "</tbody></table></div>", "plus ov-full");
@@ -1109,6 +1126,7 @@
     var on = S.tab === "tournaments" || S.tab === "tmcmp";
     if (on && !wasOn) { ST.tries = 0; loadList(!!ST.items); }
     if (!on && wasOn) closeModal();
+    if (on) { var at = document.querySelector(".tm-tabs .tm-tab.on"); if (at && at.scrollIntoView) { try { at.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {} } }
     wasOn = on;
   };
 })();

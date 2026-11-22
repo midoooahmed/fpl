@@ -6,7 +6,7 @@
   "use strict";
   var F = window.__fc, R = F.R, S = F.S, esc = F.esc;
   var ROOT = document.createElement("div"); ROOT.id = "capRoot";
-  var ST = { info: null, err: "", loading: false, team: "", sel: {}, pwd: "", show: false, grp: "__all", sk: "team", sd: 1, admin: "", busy: false, off: 0, armed: false };
+  var ST = { info: null, err: "", loading: false, team: "", sel: {}, pwd: "", show: false, grp: "__all", sk: "team", sd: 1, admin: "", busy: false, off: 0, armed: false, bulkGw: 0, bulkDirty: false, bulkText: "" };
   var wasCap = false, tmr = 0;
   /* بيفتكر آخر تيم وآخر مجموعة اتفتحت وآخر اختيارات كابتن (حتى لو لسه ماتأكدتش) */
   try {
@@ -281,7 +281,7 @@
     var I = ST.info || {};
     d.innerHTML = '<div class="tc"><h3>إدارة الكبتنة</h3><input class="cp-in" id="capKey" type="password" placeholder="مفتاح الأدمن (ADMIN_KEY)" value="' + esc(ST.admin) + '" autocomplete="off">' +
       '<div class="ab"><button class="btn b1" data-capadm="lock">' + (I.locked ? "فتح الكبتنة" : "قفل الكبتنة") + '</button><button class="btn b2" data-capadm="auto">' + (I.autoFrom > 0 ? "الكابتن التلقائي: شغال من الجولة " + I.autoFrom + " (اضغط للإيقاف)" : "الكابتن التلقائي: موقوف (اضغط للتشغيل)") + '</button><button class="btn b2" data-capadm="init">تجهيز الباسوردات (يملى الفاضي بأرقام عشوائية)</button>' +
-      '<button class="btn b2" data-capadm="clear" id="capClr">تصفير كباتن الجولة ' + (I.gw || "") + '</button><button class="btn b1" data-capadm="bulk">📋 لصق كباتن (تسجيل بالجملة)</button><button class="btn b2" data-capadm="copy">نسخ لوحة الكباتن</button><button class="btn b2" data-capadm="close">إغلاق</button></div><div id="capAdmMsg" class="cp-hint"></div></div>';
+      '<button class="btn b2" data-capadm="clear" id="capClr">تصفير كباتن الجولة ' + (I.gw || "") + '</button><button class="btn b1" data-capadm="bulk">📋 كباتن أي جولة (لصق / تعديل / تسجيل)</button><button class="btn b2" data-capadm="copy">نسخ لوحة الكباتن</button><button class="btn b2" data-capadm="close">إغلاق</button></div><div id="capAdmMsg" class="cp-hint"></div></div>';
     ST.armed = false;
   }
 
@@ -336,14 +336,45 @@
     });
     return out;
   }
-  function bulkOpen() {
+  function bulkGwSel() { var I = ST.info || {}; var g = Number(ST.bulkGw) || I.gw || S.cur || S.gw || 1; return g; }
+  function bulkOpen(keepText) {
     var d = document.getElementById("capAdm"); if (!d) return;
-    var I = ST.info || {};
-    d.innerHTML = '<div class="tc"><h3>لصق كباتن الجولة ' + (I.gw || "") + '</h3><div class="cp-hint">الصق سطر لكل تيم: <b>اسم التيم - اسم الكابتن</b> (الفاصل: - أو : أو | أو تاب من إكسيل). لو التيم عنده أكتر من مسابقة اكتب اسم المسابقة كعمود تالت. الاسم ممكن يبقى جزء منه أو رقم الـ entry.</div>' +
-      '<textarea class="cp-in" id="capBulkTx" rows="8" placeholder="ذئاب الجبل - محمد أحمد&#10;النسور : علي" style="min-height:150px;resize:vertical;direction:rtl">' + esc(ST.bulkText || "") + '</textarea>' +
+    var I = ST.info || {}, next = I.gw || 0, curG = S.cur || S.gw || 0, g = bulkGwSel();
+    var opts = []; if (curG && curG !== next) opts.push([curG, "الجولة " + curG + " (الحالية)"]); if (next) opts.push([next, "الجولة " + next + " (الجاية)"]);
+    if (!opts.some(function (o) { return o[0] === g; })) opts.push([g, "الجولة " + g]);
+    var chips = opts.map(function (o) { return '<button type="button" class="cp-tab' + (o[0] === g ? " on" : "") + '" data-capadm="bgw" data-gw="' + o[0] + '">' + o[1] + "</button>"; }).join("");
+    d.innerHTML = '<div class="tc"><h3>كباتن الجولة ' + g + '</h3><div class="cp-hint" style="margin:0 0 8px">اختار الجولة، والكباتن المسجلين فيها هيظهروا تحت تقدر تعدّلهم، أو الصق كباتن من عندك. التسجيل بيكتب فوق اختيار نفس التيم في نفس الجولة.</div>' +
+      '<div class="cp-tabs" style="padding-bottom:6px">' + chips + '</div>' +
+      '<input class="cp-in" id="capBGw" type="number" inputmode="numeric" min="1" max="60" placeholder="أو اكتب رقم جولة تانية" value="' + (g === next || g === curG ? "" : g) + '" style="margin-bottom:8px">' +
+      '<div class="cp-hint" style="margin:0 0 6px">سطر لكل تيم: <b>اسم التيم - اسم الكابتن</b> (الفاصل: - أو : أو | أو تاب من إكسيل). لو التيم عنده أكتر من مسابقة اكتب اسم المسابقة كعمود تالت. الاسم ممكن يبقى جزء منه أو رقم الـ entry.</div>' +
+      '<textarea class="cp-in" id="capBulkTx" rows="8" placeholder="ذئاب الجبل - محمد أحمد&#10;النسور : علي" style="min-height:150px;resize:vertical;direction:rtl">' + esc(keepText ? (ST.bulkText || "") : "") + '</textarea>' +
       '<input class="cp-in" id="capKey" type="password" placeholder="مفتاح الأدمن (ADMIN_KEY)" value="' + esc(ST.admin) + '" autocomplete="off" style="margin-top:8px">' +
-      '<div class="ab"><button class="btn b2" data-capadm="bpreview">معاينة</button><button class="btn b1" data-capadm="bsave" id="capBSave" disabled>تسجيل الكل</button><button class="btn b2" data-capadm="bback">رجوع</button></div><div id="capBulkOut"></div><div id="capAdmMsg" class="cp-hint"></div></div>';
-    ST.bulkRows = null;
+      '<div class="ab"><button class="btn b2" data-capadm="bload">📥 هات الكباتن المسجلين في الجولة دي</button><button class="btn b2" data-capadm="bpreview">معاينة</button><button class="btn b1" data-capadm="bsave" id="capBSave" disabled>تسجيل الكل</button><button class="btn b2" data-capadm="bclear" id="capBClr">🗑 تصفير كباتن الجولة ' + g + '</button><button class="btn b2" data-capadm="bback">رجوع</button></div><div id="capBulkOut"></div><div id="capAdmMsg" class="cp-hint"></div></div>';
+    ST.bulkRows = null; ST.armed = false;
+    if (!keepText) { ST.bulkDirty = false; ST.bulkText = ""; bulkLoad(true); }
+  }
+  /* تحميل الكباتن المسجلين فعلًا في الجولة المختارة جوه الصندوق عشان تعدّل عليهم */
+  function bulkLoad(auto) {
+    var g = bulkGwSel(), msgEl = document.getElementById("capAdmMsg"), tx = document.getElementById("capBulkTx");
+    if (!tx) return;
+    if (auto && ST.bulkDirty) return;
+    if (msgEl) msgEl.textContent = "بيجيب كباتن الجولة " + g + " ...";
+    F.api({ api: "capGw", gw: g }).then(function (r) {
+      var tx2 = document.getElementById("capBulkTx"), m2 = document.getElementById("capAdmMsg"); if (!tx2 || bulkGwSel() !== g) return;
+      if (!r || r.success === false) { var em = r && r.message; if (m2) m2.textContent = em && em.indexOf("غير معروف") > -1 ? "السيرفر لسه على نسخة قديمة: اعمل Deploy ← New version في Apps Script" : (em || "تعذّر تحميل الكباتن"); return; }
+      var cnt = {}; ((ST.info && ST.info.teams) || []).forEach(function (e) { cnt[e.team] = (cnt[e.team] || 0) + 1; });
+      var picks = (r.picks || []).slice().sort(function (a, b) { return String(a.team).localeCompare(String(b.team), "ar"); });
+      tx2.value = picks.map(function (p) { return p.team + " - " + p.person + (cnt[p.team] > 1 && p.contest ? " - " + p.contest : ""); }).join("\n");
+      ST.bulkText = tx2.value; ST.bulkDirty = false;
+      if (m2) m2.textContent = picks.length ? "اتحمّل " + picks.length + " كابتن مسجلين في الجولة " + g + " - عدّل اللي عايزه وبعدين معاينة ثم تسجيل" : "مفيش كباتن مسجلين في الجولة " + g + " لسه - الصق كباتنك";
+      if (picks.length) bulkPreview();
+    }).catch(function () { var m3 = document.getElementById("capAdmMsg"); if (m3) m3.textContent = "فشل الاتصال بالسيرفر"; });
+  }
+  function bulkPickGw(g) {
+    g = Math.floor(Number(g)); if (!(g >= 1 && g <= 60)) return;
+    var tx = document.getElementById("capBulkTx"); if (tx) ST.bulkText = tx.value;
+    var kk = document.getElementById("capKey"); if (kk && kk.value) ST.admin = kk.value;
+    ST.bulkGw = g; bulkOpen(ST.bulkDirty);
   }
   function bulkPreview() {
     var tx = document.getElementById("capBulkTx"), out = document.getElementById("capBulkOut"), sv = document.getElementById("capBSave");
@@ -364,22 +395,36 @@
     var i = 0, okN = 0, bad = [];
     (function next() {
       if (i >= rows.length) {
-        if (msgEl) msgEl.innerHTML = "اتسجّل " + okN + " من " + rows.length + (bad.length ? "<br>" + bad.map(function (b) { return "✗ " + esc(b); }).join("<br>") : "");
-        load(true).then(function () { drawBoard(); }); if (okN) ping(); return;
+        if (msgEl) msgEl.innerHTML = "اتسجّل " + okN + " من " + rows.length + " للجولة " + bulkGwSel() + (bad.length ? "<br>" + bad.map(function (b) { return "✗ " + esc(b); }).join("<br>") : "");
+        load(true).then(function () { drawBoard(); }); if (okN) { ping(); if (F.load && bulkGwSel() === S.gw) F.load(); } return;
       }
       var r = rows[i++]; if (msgEl) msgEl.textContent = "بيسجّل " + i + " / " + rows.length + " ...";
-      F.api({ api: "capBulk", key: key, team: r.team, picks: JSON.stringify(r.picks) }).then(function (res) {
+      F.api({ api: "capBulk", key: key, team: r.team, picks: JSON.stringify(r.picks), gw: bulkGwSel() }).then(function (res) {
         if (res && res.success) okN++; else bad.push(r.team + ": " + ((res && res.message) || "فشل"));
       }).catch(function () { bad.push(r.team + ": فشل الاتصال"); }).then(next);
     })();
   }
 
-  function adminRun(what) {
+  function adminRun(what, el) {
     var key = (document.getElementById("capKey") || {}).value || ST.admin; ST.admin = key;
     var out = document.getElementById("capAdmMsg"), I = ST.info || {};
     if (what === "close") { var d = document.getElementById("capAdm"); if (d) d.remove(); return; }
     if (what === "copy") { copyBoard(); return; }
-    if (what === "bulk") { bulkOpen(); return; }
+    if (what === "bulk") { ST.bulkGw = 0; ST.bulkDirty = false; bulkOpen(false); return; }
+    if (what === "bgw") { bulkPickGw(el && el.getAttribute("data-gw")); return; }
+    if (what === "bload") { bulkLoad(false); return; }
+    if (what === "bclear") {
+      var gk = (document.getElementById("capKey") || {}).value || ST.admin, gg = bulkGwSel(), mo = document.getElementById("capAdmMsg"), cb = document.getElementById("capBClr");
+      if (!gk) { if (mo) mo.textContent = "اكتب مفتاح الأدمن الأول"; return; }
+      if (!ST.armed) { ST.armed = true; if (cb) cb.textContent = "اضغط تاني للتأكيد - هيتمسح كل كباتن الجولة " + gg; return; }
+      ST.armed = false; ST.admin = gk; if (mo) mo.textContent = "جاري التصفير...";
+      F.api({ api: "capClear", key: gk, gw: gg }).then(function (r) {
+        if (mo) mo.textContent = (r && r.message) || "تم";
+        var tx0 = document.getElementById("capBulkTx"); if (tx0) tx0.value = ""; ST.bulkText = ""; ST.bulkDirty = false;
+        load(true).then(function () { drawBoard(); if (F.load && gg === S.gw) F.load(); });
+      }).catch(function () { if (mo) mo.textContent = "فشل الاتصال بالسيرفر"; });
+      return;
+    }
     if (what === "bpreview") { bulkPreview(); return; }
     if (what === "bsave") { bulkSave(); return; }
     if (what === "bback") { adminOpen(); return; }
@@ -426,9 +471,11 @@
     }
   });
   ROOT.addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target.id === "capPwd") save(); });
+  document.addEventListener("input", function (e) { if (e.target && e.target.id === "capBulkTx") { ST.bulkDirty = true; ST.bulkText = e.target.value; } });
+  document.addEventListener("change", function (e) { if (e.target && e.target.id === "capBGw" && e.target.value) bulkPickGw(e.target.value); });
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-capadm]");
-    if (b) { adminRun(b.getAttribute("data-capadm")); return; }
+    if (b) { adminRun(b.getAttribute("data-capadm"), b); return; }
     var d = document.getElementById("capAdm");
     if (d && e.target === d) d.remove();
   });
